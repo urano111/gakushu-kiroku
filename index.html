@@ -92,17 +92,18 @@ const { useState, useEffect } = React;
    ★ ここを編集してください（Firebase コンソールからコピー）
    ============================================================ */
 const FIREBASE_CONFIG = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId:             "YOUR_APP_ID"
+  apiKey: "AIzaSyAVelNNRZ1PrtZISjHSJk6GvrzfCUqRlfY",
+  authDomain: "gakushu-kiroku.firebaseapp.com",
+  databaseURL: "https://gakushu-kiroku-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "gakushu-kiroku",
+  storageBucket: "gakushu-kiroku.firebasestorage.app",
+  messagingSenderId: "946745693383",
+  appId: "1:946745693383:web:a9dd9ad5df3314dedb9ae2"
 };
 
 // 学校のメールドメイン（例: "ed.tokyo.jp" や "school.example.com"）
 // 空文字列 "" にすると全ドメインを許可します
-const SCHOOL_DOMAIN = "your-school.ed.jp";
+const SCHOOL_DOMAIN = "tokyo.soka.ed.jp";
 /* ============================================================ */
 
 firebase.initializeApp(FIREBASE_CONFIG);
