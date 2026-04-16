@@ -567,7 +567,7 @@
       "なにもしなかった",
       "プリントを読み返した",
       "プリントをやり直した",
-      "該当する問題集を解いた",
+      "問題集を解いた",
     ];
     const SYMBOLS = ["×", "△", "〇", "◎"];
     const CLS = ["lv0", "lv1", "lv2", "lv3"];
@@ -898,8 +898,15 @@
 
       useEffect(() => {
         const unsub = auth.onAuthStateChanged(u => {
-          if (u) { setUser(u); setAuthState("loggedin"); loadAll(u.uid); }
-          else { setUser(null); setAuthState("guest"); setRecords([]); }
+          if (u) {
+            setUser(u); setAuthState("loggedin");
+            db.collection("users").doc(u.uid).set({
+              displayName: u.displayName || "",
+              email: u.email || "",
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true });
+            loadAll(u.uid);
+          } else { setUser(null); setAuthState("guest"); setRecords([]); }
         });
         return () => unsub();
       }, []);
