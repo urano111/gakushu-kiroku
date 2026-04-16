@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学習記録ノート｜教員管理画面</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: #f5f4f0;
+      color: #1a1a1a;
+      min-height: 100vh;
+      font-size: 14px
+    }
+
+    .header {
+      background: #fff;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+      padding: 0 1.5rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 500
+    }
+
+    .header-sub {
+      font-size: 11px;
+      color: #888;
+      margin-top: 1px
+    }
+
+    .content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.25rem
+    }
+
+    .card {
+      background: #fff;
+      border: 0.5px solid rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      overflow: hidden
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      border: 0.5px solid rgba(0, 0, 0, 0.18);
+      background: transparent;
+      color: #1a1a1a;
+      transition: background .15s
+    }
+
+    .btn:hover {
+      background: rgba(0, 0, 0, 0.05)
+    }
+
+    .btn:disabled {
+      opacity: .4;
+      cursor: default
+    }
+
+    .btn-primary {
+      background: #0F6E56;
+      color: #fff;
+      border-color: #0F6E56
+    }
+
+    .btn-primary:hover {
+      background: #085041
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px
+    }
+
+    .btn-google {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      color: #1a1a1a;
+      gap: 10px;
+      padding: 12px 24px;
+      font-size: 15px;
+      border-radius: 8px;
+      width: 100%;
+      justify-content: center
+    }
+
+    .btn-google:hover {
+      background: #f8f8f8
+    }
+
+    .input {
+      padding: 8px 12px;
+      border: 0.5px solid rgba(0, 0, 0, 0.18);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      color: #1a1a1a;
+      background: #fff;
+      outline: none
+    }
+
+    .input:focus {
+      border-color: #1D9E75;
+      box-shadow: 0 0 0 3px rgba(29, 158, 117, .12)
+    }
+
+    .label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #888;
+      margin-bottom: 5px;
+      display: block;
+      letter-spacing: .04em;
+      text-transform: uppercase
+    }
+
+    /* login */
+    .login-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 360px;
+      text-align: center
+    }
+
+    .login-icon {
+      font-size: 40px;
+      margin-bottom: 1rem
+    }
+
+    .login-title {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 6px
+    }
+
+    .login-sub {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 2rem
+    }
+
+    .error-msg {
+      font-size: 13px;
+      color: #D85A30;
+      margin-top: 8px;
+      text-align: center
+    }
+
+    .google-icon {
+      width: 20px;
+      height: 20px
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #888
+    }
+
+    /* stats */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 1.25rem
+    }
+
+    .stat-card {
+      background: #fff;
+      border: 0.5px solid rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      padding: .875rem 1rem
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 4px;
+      letter-spacing: .04em;
+      text-transform: uppercase
+    }
+
+    .stat-val {
+      font-size: 24px;
+      font-weight: 500;
+      font-family: 'DM Mono', monospace;
+      line-height: 1
+    }
+
+    /* filter bar */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 1rem 1.25rem;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+      align-items: flex-end
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      min-width: 140px
+    }
+
+    .filter-group.grow {
+      flex: 1
+    }
+
+    /* table */
+    .table-wrap {
+      overflow-x: auto
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px
+    }
+
+    th {
+      background: #f8f7f3;
+      font-weight: 500;
+      font-size: 11px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: #888;
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+      white-space: nowrap;
+      position: sticky;
+      top: 56px
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+      vertical-align: middle
+    }
+
+    tr:last-child td {
+      border-bottom: none
+    }
+
+    tr:hover td {
+      background: rgba(0, 0, 0, 0.02)
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 99px;
+      font-weight: 500;
+      white-space: nowrap
+    }
+
+    .badge-lv0 {
+      background: #FAECE7;
+      color: #993C1D
+    }
+
+    .badge-lv1 {
+      background: #FAEEDA;
+      color: #633806
+    }
+
+    .badge-lv2 {
+      background: #E1F5EE;
+      color: #0F6E56
+    }
+
+    .badge-lv3 {
+      background: #E1F5EE;
+      color: #04342C
+    }
+
+    .badge-score {
+      background: #f0efe9;
+      color: #555;
+      font-family: 'DM Mono', monospace
+    }
+
+    .score-hi {
+      background: #E1F5EE;
+      color: #085041
+    }
+
+    .score-mid {
+      background: #FAEEDA;
+      color: #633806
+    }
+
+    .score-lo {
+      background: #FAECE7;
+      color: #4A1B0C
+    }
+
+    /* student summary */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px;
+      margin-bottom: 1.25rem
+    }
+
+    .summary-card {
+      background: #fff;
+      border: 0.5px solid rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      padding: 1rem 1.25rem
+    }
+
+    .summary-name {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px
+    }
+
+    .summary-stats {
+      display: flex;
+      gap: 12px
+    }
+
+    .summary-stat {
+      text-align: center
+    }
+
+    .summary-stat-val {
+      font-size: 18px;
+      font-weight: 500;
+      font-family: 'DM Mono', monospace
+    }
+
+    .summary-stat-label {
+      font-size: 10px;
+      color: #888;
+      letter-spacing: .03em
+    }
+
+    /* tabs */
+    .tab-row {
+      display: flex;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+      background: #fff
+    }
+
+    .tab-btn {
+      padding: 12px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: #888;
+      border-bottom: 2px solid transparent;
+      transition: all .15s
+    }
+
+    .tab-btn.active {
+      color: #0F6E56;
+      border-bottom-color: #0F6E56
+    }
+
+    .empty {
+      padding: 3rem;
+      text-align: center;
+      color: #888
+    }
+
+    /* progress bar */
+    .progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 6px;
+      background: #e8e7e2;
+      border-radius: 99px;
+      overflow: hidden;
+      min-width: 60px
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: #1D9E75
+    }
+
+    .progress-fill.mid {
+      background: #EF9F27
+    }
+
+    .progress-fill.lo {
+      background: #D85A30
+    }
+
+    .progress-val {
+      font-size: 12px;
+      font-family: 'DM Mono', monospace;
+      color: #555;
+      min-width: 32px;
+      text-align: right
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    /* ============================================================
+       ★ ここを編集してください
+       ============================================================ */
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyAVelNNRZ1PrtZISjHSJk6GvrzfCUqRlfY",
+      authDomain: "gakushu-kiroku.firebaseapp.com",
+      databaseURL: "https://gakushu-kiroku-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "gakushu-kiroku",
+      storageBucket: "gakushu-kiroku.firebasestorage.app",
+      messagingSenderId: "946745693383",
+      appId: "1:946745693383:web:a9dd9ad5df3314dedb9ae2"
+    };
+
+    // 教員のメールドメイン（例: "teacher.school.ed.jp"）
+    const TEACHER_DOMAIN = "soka.ed.jp";
+
+    // 生徒のメールドメイン（表示用）
+    const STUDENT_DOMAIN = "tokyo.soka.ed.jp";
+    /* ============================================================ */
+
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const SYMBOLS = ["×", "△", "〇", "◎"];
+    const CLS = ["lv0", "lv1", "lv2", "lv3"];
+
+    function getScoreClass(s, m) { const r = s / m; return r >= 0.8 ? "score-hi" : r >= 0.5 ? "score-mid" : "score-lo"; }
+    function fmtDate(d) {
+      if (!d) return "";
+      const dt = new Date(d + "T00:00:00");
+      return `${dt.getFullYear()}/${String(dt.getMonth() + 1).padStart(2, "0")}/${String(dt.getDate()).padStart(2, "0")}`;
+    }
+    function pct(n, d) { return d ? Math.round(n / d * 100) : 0; }
+
+    // ===== ログイン画面 =====
+    function LoginScreen({ onLogin }) {
+      const [error, setError] = useState("");
+      const [loading, setLoading] = useState(false);
+
+      async function handleGoogle() {
+        setError(""); setLoading(true);
+        try {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          provider.setCustomParameters({ hd: TEACHER_DOMAIN });
+          const result = await auth.signInWithPopup(provider);
+          const email = result.user.email || "";
+          if (!email.endsWith("@" + TEACHER_DOMAIN)) {
+            await auth.signOut();
+            setError(`教員アカウント (@${TEACHER_DOMAIN}) でログインしてください`);
+          } else { onLogin(result.user); }
+        } catch (e) {
+          if (e.code !== "auth/popup-closed-by-user")
+            setError("ログインに失敗しました。もう一度お試しください。");
+        }
+        setLoading(false);
+      }
+
+      return (
+        <div className="login-wrap">
+          <div className="login-box">
+            <div className="login-icon">📋</div>
+            <div className="login-title">教員管理画面</div>
+            <div className="login-sub">教員のGoogleアカウントでログインしてください</div>
+            <div className="card" style={{ padding: "1.5rem" }}>
+              <button className="btn btn-google" onClick={handleGoogle} disabled={loading}>
+                <svg className="google-icon" viewBox="0 0 48 48">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                </svg>
+                {loading ? "ログイン中…" : "Googleでログイン"}
+              </button>
+              {error && <div className="error-msg">{error}</div>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ===== プログレスバー =====
+    function ProgressBar({ val }) {
+      const cls = val >= 80 ? "" : "val" >= 50 ? "mid" : "lo";
+      return (
+        <div className="progress-wrap">
+          <div className="progress-bar">
+            <div className={`progress-fill ${val < 80 ? "val" < 50 ? "lo" : "mid" : ""}`}
+              style={{ width: val + "%", background: val >= 80 ? "#1D9E75" : val >= 50 ? "#EF9F27" : "#D85A30" }} />
+          </div>
+          <span className="progress-val">{val}%</span>
+        </div>
+      );
+    }
+
+    // ===== メイン管理画面 =====
+    function AdminScreen({ user }) {
+      const [allRecords, setAllRecords] = useState([]);
+      const [students, setStudents] = useState({});
+      const [loading, setLoading] = useState(true);
+      const [tab, setTab] = useState("table");
+      const [search, setSearch] = useState("");
+      const [filterStudent, setFilterStudent] = useState("");
+      const [filterDateFrom, setFilterDateFrom] = useState("");
+      const [filterDateTo, setFilterDateTo] = useState("");
+      const displayName = user.displayName || user.email.split("@")[0];
+
+      useEffect(() => { loadAll(); }, []);
+
+      async function loadAll() {
+        setLoading(true);
+        try {
+          const usersSnap = await db.collection("users").get();
+          const studentMap = {};
+          const records = [];
+
+          await Promise.all(usersSnap.docs.map(async userDoc => {
+            const uid = userDoc.id;
+            const [recSnap, settingsSnap] = await Promise.all([
+              db.collection("users").doc(uid).collection("records").orderBy("date", "desc").get(),
+              db.collection("users").doc(uid).collection("settings").doc("labels").get(),
+            ]);
+            if (recSnap.empty) return;
+
+            // 最初の記録からメールを特定（authから取れないのでrecordのcreatedAtで代用、nameはdisplayNameを別途取得）
+            // Firestoreのusersドキュメントにprofileを保存する設計ではないため、
+            // emailはuidをキーにauth側で保持。ここではuidで識別しユーザー名はemail prefixで表示
+            const profile = userDoc.data();
+            studentMap[uid] = {
+              uid,
+              name: profile.displayName || profile.email || uid,
+              email: profile.email || "",
+              count: recSnap.docs.length,
+            };
+
+            recSnap.docs.forEach(doc => {
+              records.push({ id: doc.id, uid, studentName: profile.displayName || profile.email || uid, ...doc.data() });
+            });
+          }));
+
+          setStudents(studentMap);
+          setAllRecords(records);
+        } catch (e) {
+          console.error(e);
+        }
+        setLoading(false);
+      }
+
+      // フィルタ適用
+      const filtered = useMemo(() => {
+        return allRecords.filter(r => {
+          if (filterStudent && r.uid !== filterStudent) return false;
+          if (search) {
+            const q = search.toLowerCase();
+            if (!(r.title || "").toLowerCase().includes(q) &&
+              !(r.studentName || "").toLowerCase().includes(q)) return false;
+          }
+          if (filterDateFrom && r.date < filterDateFrom) return false;
+          if (filterDateTo && r.date > filterDateTo) return false;
+          return true;
+        });
+      }, [allRecords, filterStudent, search, filterDateFrom, filterDateTo]);
+
+      // 集計
+      const stats = useMemo(() => {
+        const total = filtered.length;
+        const withScore = filtered.filter(r => r.score !== null && r.score !== undefined);
+        const avgScore = withScore.length
+          ? Math.round(withScore.reduce((s, r) => s + r.score / r.scoreMax * 100, 0) / withScore.length) : null;
+        const preAvg = total
+          ? Math.round(filtered.reduce((s, r) => s + (r.preStudy ?? 0), 0) / total / 3 * 100) : 0;
+        const revAvg = total
+          ? Math.round(filtered.reduce((s, r) => s + (r.review ?? 0), 0) / total / 3 * 100) : 0;
+        return { total, avgScore, preAvg, revAvg, studentCount: Object.keys(students).length };
+      }, [filtered, students]);
+
+      // 生徒別集計
+      const studentStats = useMemo(() => {
+        const map = {};
+        filtered.forEach(r => {
+          if (!map[r.uid]) map[r.uid] = { uid: r.uid, name: r.studentName, count: 0, preSum: 0, revSum: 0, scores: [] };
+          map[r.uid].count++;
+          map[r.uid].preSum += (r.preStudy ?? 0);
+          map[r.uid].revSum += (r.review ?? 0);
+          if (r.score !== null && r.score !== undefined) map[r.uid].scores.push(r.score / r.scoreMax * 100);
+        });
+        return Object.values(map).map(s => ({
+          ...s,
+          preAvg: pct(s.preSum, s.count * 3),
+          revAvg: pct(s.revSum, s.count * 3),
+          scoreAvg: s.scores.length ? Math.round(s.scores.reduce((a, b) => a + b, 0) / s.scores.length) : null,
+        })).sort((a, b) => a.name.localeCompare(b.name, "ja"));
+      }, [filtered]);
+
+      // CSV出力
+      function exportCSV() {
+        const header = ["氏名", "メール", "日付", "授業タイトル", "予習", "復習", "小テスト点数", "満点"];
+        const rows = filtered.map(r => [
+          r.studentName, r.uid,
+          fmtDate(r.date), r.title || "",
+          SYMBOLS[r.preStudy ?? 0], SYMBOLS[r.review ?? 0],
+          r.score !== null && r.score !== undefined ? r.score : "",
+          r.scoreMax || ""
+        ]);
+        const csv = [header, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `学習記録_${new Date().toISOString().split("T")[0]}.csv`;
+        a.click();
+      }
+
+      const studentList = Object.values(students).sort((a, b) => (a.name || "").localeCompare(b.name || "", "ja"));
+
+      if (loading) return <div className="loading">データを読み込み中…</div>;
+
+      return (
+        <div style={{ minHeight: "100vh", background: "#f5f4f0" }}>
+          <div className="header">
+            <div>
+              <div className="header-title">📋 学習記録ノート｜教員管理画面</div>
+              <div className="header-sub">{displayName}</div>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="btn btn-sm btn-primary" onClick={exportCSV}>↓ CSVエクスポート</button>
+              <button className="btn btn-sm" onClick={() => auth.signOut()}>↩ ログアウト</button>
+            </div>
+          </div>
+
+          <div className="content">
+            {/* 集計カード */}
+            <div className="stat-grid">
+              <div className="stat-card">
+                <div className="stat-label">生徒数</div>
+                <div className="stat-val">{stats.studentCount}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">記録総数</div>
+                <div className="stat-val">{stats.total}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">予習達成度（平均）</div>
+                <div className="stat-val">{stats.preAvg}<span style={{ fontSize: 14, fontFamily: "inherit" }}>%</span></div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">復習達成度（平均）</div>
+                <div className="stat-val">{stats.revAvg}<span style={{ fontSize: 14, fontFamily: "inherit" }}>%</span></div>
+              </div>
+            </div>
+
+            {/* タブ */}
+            <div className="card">
+              <div className="tab-row">
+                <button className={`tab-btn${tab === "table" ? " active" : ""}`} onClick={() => setTab("table")}>全記録一覧</button>
+                <button className={`tab-btn${tab === "summary" ? " active" : ""}`} onClick={() => setTab("summary")}>生徒別集計</button>
+              </div>
+
+              {/* フィルターバー */}
+              <div className="filter-bar">
+                <div className="filter-group grow">
+                  <span className="label">キーワード検索</span>
+                  <input className="input" style={{ width: "100%" }} placeholder="授業名・生徒名で検索…"
+                    value={search} onChange={e => setSearch(e.target.value)} />
+                </div>
+                <div className="filter-group">
+                  <span className="label">生徒で絞り込み</span>
+                  <select className="input" value={filterStudent} onChange={e => setFilterStudent(e.target.value)}>
+                    <option value="">すべての生徒</option>
+                    {studentList.map(s => (
+                      <option key={s.uid} value={s.uid}>{s.name || s.uid}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="filter-group">
+                  <span className="label">日付（開始）</span>
+                  <input className="input" type="date" value={filterDateFrom}
+                    onChange={e => setFilterDateFrom(e.target.value)} />
+                </div>
+                <div className="filter-group">
+                  <span className="label">日付（終了）</span>
+                  <input className="input" type="date" value={filterDateTo}
+                    onChange={e => setFilterDateTo(e.target.value)} />
+                </div>
+                <button className="btn btn-sm" onClick={() => { setSearch(""); setFilterStudent(""); setFilterDateFrom(""); setFilterDateTo(""); }}>
+                  リセット
+                </button>
+              </div>
+
+              {/* 全記録テーブル */}
+              {tab === "table" && (
+                <div className="table-wrap">
+                  {filtered.length === 0
+                    ? <div className="empty">該当する記録がありません</div>
+                    : (
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>日付</th>
+                            <th>生徒名</th>
+                            <th>授業タイトル</th>
+                            <th>予習</th>
+                            <th>復習</th>
+                            <th>小テスト</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filtered.map(r => (
+                            <tr key={r.id + r.uid}>
+                              <td style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, whiteSpace: "nowrap" }}>{fmtDate(r.date)}</td>
+                              <td style={{ whiteSpace: "nowrap" }}>{r.studentName}</td>
+                              <td>{r.title}</td>
+                              <td><span className={`badge badge-${CLS[r.preStudy ?? 0]}`}>{SYMBOLS[r.preStudy ?? 0]}</span></td>
+                              <td><span className={`badge badge-${CLS[r.review ?? 0]}`}>{SYMBOLS[r.review ?? 0]}</span></td>
+                              <td>
+                                {r.score !== null && r.score !== undefined
+                                  ? <span className={`badge badge-score ${getScoreClass(r.score, r.scoreMax)}`}>{r.score}/{r.scoreMax}</span>
+                                  : <span style={{ color: "#bbb", fontSize: 12 }}>—</span>
+                                }
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )
+                  }
+                </div>
+              )}
+
+              {/* 生徒別集計 */}
+              {tab === "summary" && (
+                <div style={{ padding: "1.25rem" }}>
+                  {studentStats.length === 0
+                    ? <div className="empty">該当する生徒がいません</div>
+                    : (
+                      <div className="summary-grid">
+                        {studentStats.map(s => (
+                          <div key={s.uid} className="summary-card"
+                            style={{ cursor: "pointer", transition: "box-shadow .15s" }}
+                            onClick={() => { setFilterStudent(s.uid); setTab("table"); }}
+                            onMouseEnter={e => e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,.08)"}
+                            onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}
+                          >
+                            <div className="summary-name">{s.name}</div>
+                            <div style={{ marginBottom: 8 }}>
+                              <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>予習達成度</div>
+                              <ProgressBar val={s.preAvg} />
+                            </div>
+                            <div style={{ marginBottom: 8 }}>
+                              <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>復習達成度</div>
+                              <ProgressBar val={s.revAvg} />
+                            </div>
+                            <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
+                              <div>
+                                <div style={{ fontSize: 11, color: "#888" }}>記録数</div>
+                                <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 500 }}>{s.count}</div>
+                              </div>
+                              {s.scoreAvg !== null && (
+                                <div>
+                                  <div style={{ fontSize: 11, color: "#888" }}>平均点</div>
+                                  <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 500 }}>{s.scoreAvg}%</div>
+                                </div>
+                              )}
+                            </div>
+                            <div style={{ marginTop: 8, fontSize: 11, color: "#1D9E75" }}>クリックで記録を表示 →</div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  }
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ===== メインアプリ =====
+    function App() {
+      const [authState, setAuthState] = useState("loading");
+      const [user, setUser] = useState(null);
+
+      useEffect(() => {
+        const unsub = auth.onAuthStateChanged(u => {
+          if (u) {
+            const email = u.email || "";
+            if (email.endsWith("@" + TEACHER_DOMAIN)) {
+              setUser(u); setAuthState("loggedin");
+            } else {
+              auth.signOut(); setAuthState("guest");
+            }
+          } else {
+            setUser(null); setAuthState("guest");
+          }
+        });
+        return () => unsub();
+      }, []);
+
+      if (authState === "loading") return <div className="loading">読み込み中…</div>;
+      if (authState === "guest") return <LoginScreen onLogin={u => { setUser(u); setAuthState("loggedin"); }} />;
+      return <AdminScreen user={user} />;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+
+</html>
