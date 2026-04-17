@@ -297,6 +297,11 @@
       color: #04342C
     }
 
+    .badge-subject {
+      background: #EDE9FE;
+      color: #5B21B6
+    }
+
     .badge-score {
       background: #f0efe9;
       color: #555;
@@ -713,17 +718,18 @@
     }
 
     // ===== 記録追加・編集画面 =====
-    function EditScreen({ uid, preLevels, revLevels, existing, onSave, onCancel }) {
+    function EditScreen({ uid, preLevels, revLevels, existing, onSave, onCancel, subjects }) {
       const isEdit = !!existing;
       const today = new Date().toISOString().split("T")[0];
       const [form, setForm] = useState(existing
         ? {
           title: existing.title, date: existing.date,
+          subject: existing.subject || "",
           preStudy: existing.preStudy, review: existing.review,
           score: existing.score !== null && existing.score !== undefined ? String(existing.score) : "",
           scoreMax: String(existing.scoreMax ?? 10)
         }
-        : { title: "", date: today, preStudy: null, review: null, score: "", scoreMax: "10" }
+        : { title: "", date: today, subject: "", preStudy: null, review: null, score: "", scoreMax: "10" }
       );
       const [saving, setSaving] = useState(false);
       const valid = form.title.trim() && form.preStudy !== null && form.review !== null;
@@ -734,6 +740,7 @@
         setSaving(true);
         const data = {
           date: form.date, title: form.title.trim(),
+          subject: form.subject.trim(),
           preStudy: form.preStudy, review: form.review,
           score: form.score !== "" ? Number(form.score) : null,
           scoreMax: form.scoreMax !== "" ? Number(form.scoreMax) : 10,
@@ -761,9 +768,17 @@
           <div className="content">
             <div className="card">
               <div className="form-section">
+                <label className="label">教科</label>
+                <input className="input" list="subject-list" placeholder="例：数学、英語、国語…"
+                  value={form.subject} onChange={e => set("subject", e.target.value)} autoFocus />
+                <datalist id="subject-list">
+                  {(subjects || []).map(s => <option key={s} value={s} />)}
+                </datalist>
+              </div>
+              <div className="form-section">
                 <label className="label">授業タイトル</label>
-                <input className="input" placeholder="例：数学 二次方程式" value={form.title}
-                  onChange={e => set("title", e.target.value)} autoFocus />
+                <input className="input" placeholder="例：二次方程式" value={form.title}
+                  onChange={e => set("title", e.target.value)} />
               </div>
               <div className="form-section">
                 <label className="label">授業日</label>
@@ -863,6 +878,7 @@
                       <div>
                         <div className="record-title">{r.title}</div>
                         <div className="badges">
+                          {r.subject && <span className="badge badge-subject">{r.subject}</span>}
                           <span className={`badge badge-${lv.cls}`}>予習 {lv.symbol}</span>
                           <span className={`badge badge-${lvR.cls}`}>復習 {lvR.symbol}</span>
                           {r.score !== null && r.score !== undefined && (
@@ -934,20 +950,21 @@
 
       const preLevels = buildLevels(preLabels);
       const revLevels = buildLevels(revLabels);
+      const subjects = [...new Set(records.map(r => r.subject).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ja"));
 
       if (authState === "loading") return <div className="loading">読み込み中…</div>;
       if (authState === "guest") return <LoginScreen onLogin={u => { setUser(u); setAuthState("loggedin"); loadAll(u.uid); }} />;
 
       if (view === "add") return (
         <EditScreen uid={user.uid} preLevels={preLevels} revLevels={revLevels}
-          existing={null}
+          existing={null} subjects={subjects}
           onSave={() => { loadAll(user.uid); setView("list"); }}
           onCancel={() => setView("list")} />
       );
 
       if (view === "edit") return (
         <EditScreen uid={user.uid} preLevels={preLevels} revLevels={revLevels}
-          existing={editRecord}
+          existing={editRecord} subjects={subjects}
           onSave={() => { loadAll(user.uid); setView("list"); setEditRecord(null); }}
           onCancel={() => { setView("list"); setEditRecord(null); }} />
       );
