@@ -273,7 +273,9 @@
       border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
       white-space: nowrap;
       position: sticky;
-      top: 56px
+      top: 56px;
+      z-index: 5;
+      background: #f8f7f3
     }
 
     td {
@@ -412,6 +414,98 @@
       color: #888
     }
 
+    /* criteria labels */
+    .criteria-section {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 0.5px solid rgba(0,0,0,0.08)
+    }
+
+    .criteria-title {
+      font-size: 10px;
+      color: #888;
+      letter-spacing: .04em;
+      margin-bottom: 6px;
+      font-weight: 500
+    }
+
+    .criteria-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px
+    }
+
+    .criteria-row:last-child {
+      margin-bottom: 0
+    }
+
+    .criteria-symbol {
+      font-size: 12px;
+      font-weight: 500;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 5px;
+      flex-shrink: 0
+    }
+
+    .criteria-label {
+      font-size: 11px;
+      color: #555
+    }
+
+    .criteria-type {
+      font-size: 10px;
+      font-weight: 500;
+      color: #0F6E56;
+      margin-top: 6px;
+      margin-bottom: 4px
+    }
+
+    /* tooltip */
+    .tip-wrap {
+      position: relative;
+      display: inline-block;
+      cursor: default
+    }
+
+    .tip-wrap .tip {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a1a;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 400;
+      padding: 5px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      pointer-events: none;
+      transition: opacity .15s, visibility .15s;
+      z-index: 20
+    }
+
+    .tip-wrap .tip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: #1a1a1a
+    }
+
+    .tip-wrap:hover .tip {
+      visibility: visible;
+      opacity: 1
+    }
+
     /* progress bar */
     .progress-wrap {
       display: flex;
@@ -483,6 +577,8 @@
 
     const SYMBOLS = ["×", "△", "〇", "◎"];
     const CLS = ["lv0", "lv1", "lv2", "lv3"];
+    const DEFAULT_PRE_LABELS = ["なにもしなかった", "教科書を少し見た", "教科書を読んだ", "動画教材を見た"];
+    const DEFAULT_REV_LABELS = ["なにもしなかった", "プリントを読み返した", "プリントをやり直した", "問題集を解いた"];
 
     function getScoreClass(s, m) { const r = s / m; return r >= 0.8 ? "score-hi" : r >= 0.5 ? "score-mid" : "score-lo"; }
     function fmtDate(d) {
@@ -562,6 +658,7 @@
       const [filterStudent, setFilterStudent] = useState("");
       const [filterDateFrom, setFilterDateFrom] = useState("");
       const [filterDateTo, setFilterDateTo] = useState("");
+      const [filterSubject, setFilterSubject] = useState("");
       const displayName = user.displayName || user.email.split("@")[0];
 
       useEffect(() => { loadAll(); }, []);
@@ -585,11 +682,14 @@
             // Firestoreのusersドキュメントにprofileを保存する設計ではないため、
             // emailはuidをキーにauth側で保持。ここではuidで識別しユーザー名はemail prefixで表示
             const profile = userDoc.data();
+            const sData = settingsSnap.exists ? settingsSnap.data() : {};
             studentMap[uid] = {
               uid,
               name: profile.displayName || profile.email || uid,
               email: profile.email || "",
               count: recSnap.docs.length,
+              preLabels: sData.preLabels || [...DEFAULT_PRE_LABELS],
+              revLabels: sData.revLabels || [...DEFAULT_REV_LABELS],
             };
 
             recSnap.docs.forEach(doc => {
@@ -609,16 +709,18 @@
       const filtered = useMemo(() => {
         return allRecords.filter(r => {
           if (filterStudent && r.uid !== filterStudent) return false;
+          if (filterSubject && (r.subject || "") !== filterSubject) return false;
           if (search) {
             const q = search.toLowerCase();
             if (!(r.title || "").toLowerCase().includes(q) &&
-              !(r.studentName || "").toLowerCase().includes(q)) return false;
+              !(r.studentName || "").toLowerCase().includes(q) &&
+              !(r.subject || "").toLowerCase().includes(q)) return false;
           }
           if (filterDateFrom && r.date < filterDateFrom) return false;
           if (filterDateTo && r.date > filterDateTo) return false;
           return true;
         });
-      }, [allRecords, filterStudent, search, filterDateFrom, filterDateTo]);
+      }, [allRecords, filterStudent, filterSubject, search, filterDateFrom, filterDateTo]);
 
       // 集計
       const stats = useMemo(() => {
@@ -637,7 +739,7 @@
       const studentStats = useMemo(() => {
         const map = {};
         filtered.forEach(r => {
-          if (!map[r.uid]) map[r.uid] = { uid: r.uid, name: r.studentName, count: 0, preSum: 0, revSum: 0, scores: [] };
+          if (!map[r.uid]) map[r.uid] = { uid: r.uid, name: r.studentName, count: 0, preSum: 0, revSum: 0, scores: [], preLabels: students[r.uid]?.preLabels || DEFAULT_PRE_LABELS, revLabels: students[r.uid]?.revLabels || DEFAULT_REV_LABELS };
           map[r.uid].count++;
           map[r.uid].preSum += (r.preStudy ?? 0);
           map[r.uid].revSum += (r.review ?? 0);
@@ -653,10 +755,10 @@
 
       // CSV出力
       function exportCSV() {
-        const header = ["氏名", "メール", "日付", "授業タイトル", "予習", "復習", "小テスト点数", "満点"];
+        const header = ["氏名", "メール", "日付", "教科", "授業タイトル", "予習", "復習", "小テスト点数", "満点"];
         const rows = filtered.map(r => [
           r.studentName, r.uid,
-          fmtDate(r.date), r.title || "",
+          fmtDate(r.date), r.subject || "", r.title || "",
           SYMBOLS[r.preStudy ?? 0], SYMBOLS[r.review ?? 0],
           r.score !== null && r.score !== undefined ? r.score : "",
           r.scoreMax || ""
@@ -670,6 +772,7 @@
       }
 
       const studentList = Object.values(students).sort((a, b) => (a.name || "").localeCompare(b.name || "", "ja"));
+      const subjectList = [...new Set(allRecords.map(r => r.subject).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ja"));
 
       if (loading) return <div className="loading">データを読み込み中…</div>;
 
@@ -731,6 +834,15 @@
                   </select>
                 </div>
                 <div className="filter-group">
+                  <span className="label">教科で絞り込み</span>
+                  <select className="input" value={filterSubject} onChange={e => setFilterSubject(e.target.value)}>
+                    <option value="">すべての教科</option>
+                    {subjectList.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="filter-group">
                   <span className="label">日付（開始）</span>
                   <input className="input" type="date" value={filterDateFrom}
                     onChange={e => setFilterDateFrom(e.target.value)} />
@@ -740,7 +852,7 @@
                   <input className="input" type="date" value={filterDateTo}
                     onChange={e => setFilterDateTo(e.target.value)} />
                 </div>
-                <button className="btn btn-sm" onClick={() => { setSearch(""); setFilterStudent(""); setFilterDateFrom(""); setFilterDateTo(""); }}>
+                <button className="btn btn-sm" onClick={() => { setSearch(""); setFilterStudent(""); setFilterSubject(""); setFilterDateFrom(""); setFilterDateTo(""); }}>
                   リセット
                 </button>
               </div>
@@ -756,6 +868,7 @@
                           <tr>
                             <th>日付</th>
                             <th>生徒名</th>
+                            <th>教科</th>
                             <th>授業タイトル</th>
                             <th>予習</th>
                             <th>復習</th>
@@ -767,9 +880,20 @@
                             <tr key={r.id + r.uid}>
                               <td style={{ fontFamily: "'DM Mono',monospace", fontSize: 12, whiteSpace: "nowrap" }}>{fmtDate(r.date)}</td>
                               <td style={{ whiteSpace: "nowrap" }}>{r.studentName}</td>
+                              <td>{r.subject ? <span className="badge" style={{ background: "#EDE9FE", color: "#5B21B6" }}>{r.subject}</span> : <span style={{ color: "#bbb", fontSize: 12 }}>—</span>}</td>
                               <td>{r.title}</td>
-                              <td><span className={`badge badge-${CLS[r.preStudy ?? 0]}`}>{SYMBOLS[r.preStudy ?? 0]}</span></td>
-                              <td><span className={`badge badge-${CLS[r.review ?? 0]}`}>{SYMBOLS[r.review ?? 0]}</span></td>
+                              <td>
+                                <span className="tip-wrap">
+                                  <span className={`badge badge-${CLS[r.preStudy ?? 0]}`}>{SYMBOLS[r.preStudy ?? 0]}</span>
+                                  <span className="tip">{(students[r.uid]?.preLabels || DEFAULT_PRE_LABELS)[r.preStudy ?? 0]}</span>
+                                </span>
+                              </td>
+                              <td>
+                                <span className="tip-wrap">
+                                  <span className={`badge badge-${CLS[r.review ?? 0]}`}>{SYMBOLS[r.review ?? 0]}</span>
+                                  <span className="tip">{(students[r.uid]?.revLabels || DEFAULT_REV_LABELS)[r.review ?? 0]}</span>
+                                </span>
+                              </td>
                               <td>
                                 {r.score !== null && r.score !== undefined
                                   ? <span className={`badge badge-score ${getScoreClass(r.score, r.scoreMax)}`}>{r.score}/{r.scoreMax}</span>
@@ -819,6 +943,23 @@
                                   <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 500 }}>{s.scoreAvg}%</div>
                                 </div>
                               )}
+                            </div>
+                            <div className="criteria-section">
+                              <div className="criteria-title">📏 この生徒の評価基準</div>
+                              <div className="criteria-type">予習</div>
+                              {SYMBOLS.map((sym, i) => (
+                                <div key={"pre"+i} className="criteria-row">
+                                  <div className={`criteria-symbol lv${i}-bg`}>{sym}</div>
+                                  <span className="criteria-label">{s.preLabels?.[i] || DEFAULT_PRE_LABELS[i]}</span>
+                                </div>
+                              ))}
+                              <div className="criteria-type">復習</div>
+                              {SYMBOLS.map((sym, i) => (
+                                <div key={"rev"+i} className="criteria-row">
+                                  <div className={`criteria-symbol lv${i}-bg`}>{sym}</div>
+                                  <span className="criteria-label">{s.revLabels?.[i] || DEFAULT_REV_LABELS[i]}</span>
+                                </div>
+                              ))}
                             </div>
                             <div style={{ marginTop: 8, fontSize: 11, color: "#1D9E75" }}>クリックで記録を表示 →</div>
                           </div>
