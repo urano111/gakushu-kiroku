@@ -545,6 +545,216 @@
       min-width: 32px;
       text-align: right
     }
+
+    /* ===== 考査振り返り ===== */
+    .exam-matrix-wrap {
+      overflow-x: auto;
+      padding: 1.25rem
+    }
+
+    .exam-matrix {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px
+    }
+
+    .exam-matrix th,
+    .exam-matrix td {
+      padding: 10px 12px;
+      border: 0.5px solid rgba(0, 0, 0, 0.08);
+      text-align: center;
+      vertical-align: middle
+    }
+
+    .exam-matrix th {
+      background: #f8f7f3;
+      font-weight: 500;
+      font-size: 11px;
+      color: #555;
+      white-space: nowrap
+    }
+
+    .exam-matrix td.name-cell {
+      text-align: left;
+      font-weight: 500;
+      background: #fafafa;
+      white-space: nowrap
+    }
+
+    .exam-cell-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      font-family: inherit;
+      transition: transform .1s
+    }
+
+    .exam-cell-btn:hover {
+      transform: scale(1.1)
+    }
+
+    .exam-cell-btn.done {
+      background: #E1F5EE;
+      color: #0F6E56
+    }
+
+    .exam-cell-btn.empty {
+      background: #f0efe9;
+      color: #ccc;
+      cursor: default
+    }
+
+    .exam-cell-btn.empty:hover {
+      transform: none
+    }
+
+    .exam-detail-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 1rem
+    }
+
+    .exam-detail-modal {
+      background: #fff;
+      border-radius: 12px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2)
+    }
+
+    .exam-detail-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 5;
+      border-radius: 12px 12px 0 0
+    }
+
+    .exam-detail-title {
+      font-size: 15px;
+      font-weight: 500
+    }
+
+    .exam-detail-sub {
+      font-size: 12px;
+      color: #888;
+      margin-top: 2px
+    }
+
+    .exam-detail-body {
+      padding: 1.25rem
+    }
+
+    .exam-detail-section {
+      margin-bottom: 1.25rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.08)
+    }
+
+    .exam-detail-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0
+    }
+
+    .exam-detail-section-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #0F6E56;
+      margin-bottom: 8px
+    }
+
+    .exam-detail-field {
+      margin-bottom: 10px
+    }
+
+    .exam-detail-field:last-child {
+      margin-bottom: 0
+    }
+
+    .exam-detail-field-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 4px;
+      font-weight: 500
+    }
+
+    .exam-detail-text {
+      background: #f8f7f3;
+      border: 0.5px solid rgba(0, 0, 0, 0.06);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      color: #1a1a1a;
+      min-height: 38px
+    }
+
+    .exam-detail-text.empty {
+      color: #bbb;
+      font-style: italic
+    }
+
+    .exam-detail-goal {
+      background: #FAEEDA;
+      border: 0.5px solid #EF9F27;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      color: #412402;
+      min-height: 38px
+    }
+
+    .exam-close-btn {
+      background: none;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: #888;
+      padding: 4px 8px;
+      line-height: 1
+    }
+
+    .exam-close-btn:hover {
+      color: #1a1a1a
+    }
+
+    .exam-legend {
+      display: flex;
+      gap: 14px;
+      padding: 10px 1.25rem;
+      font-size: 11px;
+      color: #888;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+      flex-wrap: wrap
+    }
+
+    .exam-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px
+    }
   </style>
 </head>
 
@@ -581,6 +791,14 @@
     const CLS = ["lv0", "lv1", "lv2", "lv3"];
     const DEFAULT_PRE_LABELS = ["なにもしなかった", "教科書を少し見た", "教科書を読んだ", "動画教材を見た"];
     const DEFAULT_REV_LABELS = ["なにもしなかった", "プリントを読み返した", "プリントをやり直した", "問題集を解いた"];
+
+    const EXAM_LIST = [
+      { id: "term1_mid",   name: "1学期中間考査",  short: "1学期中間" },
+      { id: "term1_final", name: "1学期期末考査",  short: "1学期期末" },
+      { id: "term2_mid",   name: "2学期中間考査",  short: "2学期中間" },
+      { id: "term2_final", name: "2学期期末考査",  short: "2学期期末" },
+      { id: "year_final",  name: "学年末考査",    short: "学年末" },
+    ];
 
     function getScoreClass(s, m) { const r = s / m; return r >= 0.8 ? "score-hi" : r >= 0.5 ? "score-mid" : "score-lo"; }
     function fmtDate(d) {
@@ -654,6 +872,7 @@
     function AdminScreen({ user }) {
       const [allRecords, setAllRecords] = useState([]);
       const [students, setStudents] = useState({});
+      const [examReviews, setExamReviews] = useState({}); // {uid: {examId: data}}
       const [loading, setLoading] = useState(true);
       const [tab, setTab] = useState("table");
       const [search, setSearch] = useState("");
@@ -661,6 +880,7 @@
       const [filterDateFrom, setFilterDateFrom] = useState("");
       const [filterDateTo, setFilterDateTo] = useState("");
       const [filterSubject, setFilterSubject] = useState("");
+      const [detailReview, setDetailReview] = useState(null); // {studentName, examName, data}
       const displayName = user.displayName || user.email.split("@")[0];
 
       useEffect(() => { loadAll(); }, []);
@@ -671,20 +891,24 @@
           const usersSnap = await db.collection("users").get();
           const studentMap = {};
           const records = [];
+          const reviewMap = {};
 
           await Promise.all(usersSnap.docs.map(async userDoc => {
             const uid = userDoc.id;
-            const [recSnap, settingsSnap] = await Promise.all([
+            const [recSnap, settingsSnap, reviewSnap] = await Promise.all([
               db.collection("users").doc(uid).collection("records").orderBy("date", "desc").get(),
               db.collection("users").doc(uid).collection("settings").doc("labels").get(),
+              db.collection("users").doc(uid).collection("examReviews").get(),
             ]);
-            if (recSnap.empty) return;
 
-            // 最初の記録からメールを特定（authから取れないのでrecordのcreatedAtで代用、nameはdisplayNameを別途取得）
-            // Firestoreのusersドキュメントにprofileを保存する設計ではないため、
-            // emailはuidをキーにauth側で保持。ここではuidで識別しユーザー名はemail prefixで表示
             const profile = userDoc.data();
             const sData = settingsSnap.exists ? settingsSnap.data() : {};
+            const hasRecords = !recSnap.empty;
+            const hasReviews = !reviewSnap.empty;
+
+            // 学習記録または考査振り返りのいずれかがあれば生徒として登録
+            if (!hasRecords && !hasReviews) return;
+
             studentMap[uid] = {
               uid,
               name: profile.displayName || profile.email || uid,
@@ -697,10 +921,18 @@
             recSnap.docs.forEach(doc => {
               records.push({ id: doc.id, uid, studentName: profile.displayName || profile.email || uid, ...doc.data() });
             });
+
+            // 考査振り返り
+            if (hasReviews) {
+              const rMap = {};
+              reviewSnap.docs.forEach(doc => { rMap[doc.id] = doc.data(); });
+              reviewMap[uid] = rMap;
+            }
           }));
 
           setStudents(studentMap);
           setAllRecords(records);
+          setExamReviews(reviewMap);
         } catch (e) {
           console.error(e);
         }
@@ -817,6 +1049,7 @@
               <div className="tab-row">
                 <button className={`tab-btn${tab === "table" ? " active" : ""}`} onClick={() => setTab("table")}>全記録一覧</button>
                 <button className={`tab-btn${tab === "summary" ? " active" : ""}`} onClick={() => setTab("summary")}>生徒別集計</button>
+                <button className={`tab-btn${tab === "exam" ? " active" : ""}`} onClick={() => setTab("exam")}>考査振り返り</button>
               </div>
 
               {/* フィルターバー */}
@@ -971,8 +1204,144 @@
                   }
                 </div>
               )}
+
+              {/* 考査振り返り */}
+              {tab === "exam" && (
+                <>
+                  <div className="exam-legend">
+                    <span className="exam-legend-item">
+                      <span className="exam-cell-btn done" style={{ width: 20, height: 20, fontSize: 12 }}>✓</span>
+                      記入済み（クリックで内容表示）
+                    </span>
+                    <span className="exam-legend-item">
+                      <span className="exam-cell-btn empty" style={{ width: 20, height: 20, fontSize: 12 }}>−</span>
+                      未記入
+                    </span>
+                  </div>
+                  <div className="exam-matrix-wrap">
+                    {studentList.length === 0
+                      ? <div className="empty">生徒がいません</div>
+                      : (
+                        <table className="exam-matrix">
+                          <thead>
+                            <tr>
+                              <th style={{ textAlign: "left" }}>生徒名</th>
+                              {EXAM_LIST.map(exam => (
+                                <th key={exam.id}>{exam.short}</th>
+                              ))}
+                              <th>記入数</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {studentList
+                              .filter(s => !filterStudent || s.uid === filterStudent)
+                              .filter(s => !search || (s.name || "").toLowerCase().includes(search.toLowerCase()))
+                              .map(s => {
+                                const reviews = examReviews[s.uid] || {};
+                                const filledCount = EXAM_LIST.filter(e => {
+                                  const d = reviews[e.id];
+                                  return d && (d.goal || d.task1Problem || d.task1Effort || d.task2Problem || d.task2Plan || d.task3Reflection);
+                                }).length;
+                                return (
+                                  <tr key={s.uid}>
+                                    <td className="name-cell">{s.name}</td>
+                                    {EXAM_LIST.map(exam => {
+                                      const data = reviews[exam.id];
+                                      const filled = data && (data.goal || data.task1Problem || data.task1Effort || data.task2Problem || data.task2Plan || data.task3Reflection);
+                                      return (
+                                        <td key={exam.id}>
+                                          <button
+                                            className={`exam-cell-btn ${filled ? "done" : "empty"}`}
+                                            onClick={() => filled && setDetailReview({
+                                              studentName: s.name,
+                                              examName: exam.name,
+                                              data
+                                            })}
+                                            title={filled ? "クリックで詳細表示" : "未記入"}
+                                          >
+                                            {filled ? "✓" : "−"}
+                                          </button>
+                                        </td>
+                                      );
+                                    })}
+                                    <td style={{ fontFamily: "'DM Mono',monospace", color: filledCount > 0 ? "#0F6E56" : "#bbb" }}>
+                                      {filledCount}/{EXAM_LIST.length}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
+                      )
+                    }
+                  </div>
+                </>
+              )}
             </div>
           </div>
+
+          {/* 考査振り返り詳細モーダル */}
+          {detailReview && (
+            <div className="exam-detail-overlay" onClick={() => setDetailReview(null)}>
+              <div className="exam-detail-modal" onClick={e => e.stopPropagation()}>
+                <div className="exam-detail-header">
+                  <div>
+                    <div className="exam-detail-title">{detailReview.examName}</div>
+                    <div className="exam-detail-sub">{detailReview.studentName} さんの振り返り</div>
+                  </div>
+                  <button className="exam-close-btn" onClick={() => setDetailReview(null)} title="閉じる">×</button>
+                </div>
+                <div className="exam-detail-body">
+                  {/* 目標 */}
+                  <div className="exam-detail-section">
+                    <div className="exam-detail-section-title">🎯 自分の目標</div>
+                    <div className={`exam-detail-goal ${!detailReview.data.goal ? "empty" : ""}`}>
+                      {detailReview.data.goal || "（未記入）"}
+                    </div>
+                  </div>
+                  {/* 課題① */}
+                  <div className="exam-detail-section">
+                    <div className="exam-detail-section-title">課題① できて嬉しかった・よかったと思う問題</div>
+                    <div className="exam-detail-field">
+                      <div className="exam-detail-field-label">問題と正解</div>
+                      <div className={`exam-detail-text ${!detailReview.data.task1Problem ? "empty" : ""}`}>
+                        {detailReview.data.task1Problem || "（未記入）"}
+                      </div>
+                    </div>
+                    <div className="exam-detail-field">
+                      <div className="exam-detail-field-label">正解するために頑張ったこと</div>
+                      <div className={`exam-detail-text ${!detailReview.data.task1Effort ? "empty" : ""}`}>
+                        {detailReview.data.task1Effort || "（未記入）"}
+                      </div>
+                    </div>
+                  </div>
+                  {/* 課題② */}
+                  <div className="exam-detail-section">
+                    <div className="exam-detail-section-title">課題② 正解したかった問題</div>
+                    <div className="exam-detail-field">
+                      <div className="exam-detail-field-label">問題と正解</div>
+                      <div className={`exam-detail-text ${!detailReview.data.task2Problem ? "empty" : ""}`}>
+                        {detailReview.data.task2Problem || "（未記入）"}
+                      </div>
+                    </div>
+                    <div className="exam-detail-field">
+                      <div className="exam-detail-field-label">次はどう対策（行動）したいか</div>
+                      <div className={`exam-detail-text ${!detailReview.data.task2Plan ? "empty" : ""}`}>
+                        {detailReview.data.task2Plan || "（未記入）"}
+                      </div>
+                    </div>
+                  </div>
+                  {/* 課題③ */}
+                  <div className="exam-detail-section">
+                    <div className="exam-detail-section-title">課題③ 今回の振り返りと次への思い</div>
+                    <div className={`exam-detail-text ${!detailReview.data.task3Reflection ? "empty" : ""}`}>
+                      {detailReview.data.task3Reflection || "（未記入）"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }

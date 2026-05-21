@@ -534,6 +534,148 @@
       color: #085041;
       text-align: center
     }
+
+    /* ===== 考査振り返り ===== */
+    .exam-select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 0.5px solid rgba(0, 0, 0, 0.18);
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      font-weight: 500;
+      color: #1a1a1a;
+      background: #fff;
+      outline: none;
+      cursor: pointer
+    }
+
+    .exam-select:focus {
+      border-color: #1D9E75;
+      box-shadow: 0 0 0 3px rgba(29, 158, 117, .12)
+    }
+
+    .exam-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 500;
+      margin-left: 6px;
+      white-space: nowrap
+    }
+
+    .exam-status.done {
+      background: #E1F5EE;
+      color: #085041
+    }
+
+    .exam-status.empty {
+      background: #f0efe9;
+      color: #888
+    }
+
+    .exam-goal-box {
+      background: #FAEEDA;
+      border: 0.5px solid #EF9F27;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-top: 6px
+    }
+
+    .exam-goal-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #633806;
+      margin-bottom: 6px
+    }
+
+    .exam-task {
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 0.5px solid rgba(0, 0, 0, 0.08)
+    }
+
+    .exam-task:first-of-type {
+      border-top: none;
+      margin-top: 0;
+      padding-top: 0
+    }
+
+    .exam-task-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #0F6E56;
+      margin-bottom: 4px
+    }
+
+    .exam-task-desc {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.5
+    }
+
+    .exam-field {
+      margin-bottom: 10px
+    }
+
+    .exam-field:last-child {
+      margin-bottom: 0
+    }
+
+    .exam-field-label {
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 4px;
+      display: block;
+      font-weight: 500
+    }
+
+    .exam-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 0.5px solid rgba(0, 0, 0, 0.18);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #1a1a1a;
+      background: #fff;
+      outline: none;
+      resize: vertical;
+      min-height: 80px;
+      line-height: 1.5
+    }
+
+    .exam-textarea:focus {
+      border-color: #1D9E75;
+      box-shadow: 0 0 0 3px rgba(29, 158, 117, .12)
+    }
+
+    .exam-nav-btn {
+      display: block;
+      width: 100%;
+      padding: 14px 16px;
+      background: #fff;
+      border: 0.5px solid rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background .15s
+    }
+
+    .exam-nav-btn:hover {
+      background: #f8f7f3
+    }
+
+    .exam-nav-icon {
+      font-size: 18px
+    }
   </style>
 </head>
 
@@ -583,6 +725,16 @@
 
     function userCol(uid) { return db.collection("users").doc(uid).collection("records"); }
     function settingsDoc(uid) { return db.collection("users").doc(uid).collection("settings").doc("labels"); }
+    function examReviewCol(uid) { return db.collection("users").doc(uid).collection("examReviews"); }
+
+    // ===== 考査リスト =====
+    const EXAM_LIST = [
+      { id: "term1_mid",   name: "1学期中間考査" },
+      { id: "term1_final", name: "1学期期末考査" },
+      { id: "term2_mid",   name: "2学期中間考査" },
+      { id: "term2_final", name: "2学期期末考査" },
+      { id: "year_final",  name: "学年末考査" },
+    ];
 
     function getScoreClass(score, max) {
       const r = score / max;
@@ -717,6 +869,176 @@
       );
     }
 
+    // ===== 考査振り返り画面 =====
+    function ExamReviewScreen({ uid, onBack }) {
+      const [selectedExam, setSelectedExam] = useState(EXAM_LIST[0].id);
+      const [allReviews, setAllReviews] = useState({}); // {examId: data}
+      const [loading, setLoading] = useState(true);
+      const [saving, setSaving] = useState(false);
+      const [savedMsg, setSavedMsg] = useState("");
+      const [form, setForm] = useState({
+        goal: "", task1Problem: "", task1Effort: "",
+        task2Problem: "", task2Plan: "", task3Reflection: ""
+      });
+
+      // 全考査分を読み込み（完了状態判定用）
+      useEffect(() => {
+        (async () => {
+          setLoading(true);
+          const snap = await examReviewCol(uid).get();
+          const map = {};
+          snap.docs.forEach(doc => { map[doc.id] = doc.data(); });
+          setAllReviews(map);
+          setLoading(false);
+        })();
+      }, [uid]);
+
+      // 選択中の考査が変わったらフォームを差し替え
+      useEffect(() => {
+        const data = allReviews[selectedExam] || {};
+        setForm({
+          goal: data.goal || "",
+          task1Problem: data.task1Problem || "",
+          task1Effort: data.task1Effort || "",
+          task2Problem: data.task2Problem || "",
+          task2Plan: data.task2Plan || "",
+          task3Reflection: data.task3Reflection || "",
+        });
+        setSavedMsg("");
+      }, [selectedExam, allReviews]);
+
+      const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+      const examName = EXAM_LIST.find(e => e.id === selectedExam)?.name || "";
+
+      async function handleSave() {
+        if (saving) return;
+        setSaving(true);
+        const data = {
+          ...form,
+          examId: selectedExam,
+          examName,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        };
+        await examReviewCol(uid).doc(selectedExam).set(data, { merge: true });
+        setAllReviews(prev => ({ ...prev, [selectedExam]: data }));
+        setSaving(false);
+        setSavedMsg("保存しました！");
+        setTimeout(() => setSavedMsg(""), 2000);
+      }
+
+      function isFilled(examId) {
+        const d = allReviews[examId];
+        if (!d) return false;
+        return !!(d.goal || d.task1Problem || d.task1Effort || d.task2Problem || d.task2Plan || d.task3Reflection);
+      }
+
+      if (loading) return <div className="loading">読み込み中…</div>;
+
+      return (
+        <div className="app">
+          <div className="header">
+            <button className="btn btn-sm" onClick={onBack}>← 戻る</button>
+            <span className="header-title">考査の振り返り</span>
+            <button className="btn btn-sm btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? "保存中…" : "保存"}
+            </button>
+          </div>
+          <div className="content">
+            <div className="card">
+              {/* 考査選択 */}
+              <div className="form-section">
+                <label className="label">考査を選んでください</label>
+                <select className="exam-select" value={selectedExam}
+                  onChange={e => setSelectedExam(e.target.value)}>
+                  {EXAM_LIST.map(exam => (
+                    <option key={exam.id} value={exam.id}>
+                      {exam.name}{isFilled(exam.id) ? " ✓ 記入済み" : ""}
+                    </option>
+                  ))}
+                </select>
+                <div style={{ marginTop: 8, fontSize: 12, color: "#888" }}>
+                  【目標】ひとりも残らず全員が、自分なりに考査の結果を分析できるようになる。
+                </div>
+              </div>
+
+              {/* 自分の目標 */}
+              <div className="form-section">
+                <div className="exam-goal-box">
+                  <div className="exam-goal-label">🎯 自分の目標</div>
+                  <textarea className="exam-textarea" style={{ background: "#fff" }}
+                    placeholder="この考査で達成したい自分の目標を書きましょう"
+                    value={form.goal} onChange={e => set("goal", e.target.value)} />
+                </div>
+              </div>
+
+              {/* 課題① */}
+              <div className="form-section">
+                <div className="exam-task">
+                  <div className="exam-task-title">課題① できて嬉しかった・よかったと思う問題</div>
+                  <div className="exam-task-desc">
+                    自分ができて嬉しかった・よかったと思う問題を1つ選び、その問題の概要と答えを書きなさい。また、自分が何を頑張ったから正解できたのかも、自分なりに考えて書きなさい。
+                  </div>
+                  <div className="exam-field">
+                    <label className="exam-field-label">問題と正解</label>
+                    <textarea className="exam-textarea"
+                      value={form.task1Problem} onChange={e => set("task1Problem", e.target.value)} />
+                  </div>
+                  <div className="exam-field">
+                    <label className="exam-field-label">正解するために頑張ったこと</label>
+                    <textarea className="exam-textarea"
+                      value={form.task1Effort} onChange={e => set("task1Effort", e.target.value)} />
+                  </div>
+                </div>
+              </div>
+
+              {/* 課題② */}
+              <div className="form-section">
+                <div className="exam-task">
+                  <div className="exam-task-title">課題② 正解したかった問題</div>
+                  <div className="exam-task-desc">
+                    自分が正解したかった問題を1つ選んで書き、その問題と答えを書きなさい。また、そのためにどういう風に対策（行動）していくか、自分なりに考えて書きなさい。
+                  </div>
+                  <div className="exam-field">
+                    <label className="exam-field-label">問題と正解</label>
+                    <textarea className="exam-textarea"
+                      value={form.task2Problem} onChange={e => set("task2Problem", e.target.value)} />
+                  </div>
+                  <div className="exam-field">
+                    <label className="exam-field-label">次はどう対策（行動）したいか</label>
+                    <textarea className="exam-textarea"
+                      value={form.task2Plan} onChange={e => set("task2Plan", e.target.value)} />
+                  </div>
+                </div>
+              </div>
+
+              {/* 課題③ */}
+              <div className="form-section">
+                <div className="exam-task">
+                  <div className="exam-task-title">課題③ 今回の振り返りと次への思い</div>
+                  <div className="exam-task-desc">
+                    今回の考査の結果に対して自分がどう思うかと、次学期への思いを書いてみよう！
+                  </div>
+                  <div className="exam-field">
+                    <textarea className="exam-textarea" style={{ minHeight: 120 }}
+                      value={form.task3Reflection} onChange={e => set("task3Reflection", e.target.value)} />
+                  </div>
+                </div>
+              </div>
+
+              {/* 保存ボタン（下にも配置） */}
+              <div className="form-section" style={{ textAlign: "center" }}>
+                <button className="btn btn-primary" onClick={handleSave} disabled={saving}
+                  style={{ minWidth: 160 }}>
+                  {saving ? "保存中…" : "💾 保存する"}
+                </button>
+                <div className="saved-msg">{savedMsg}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // ===== 記録追加・編集画面 =====
     function EditScreen({ uid, preLevels, revLevels, existing, onSave, onCancel, subjects }) {
       const isEdit = !!existing;
@@ -811,7 +1133,7 @@
     }
 
     // ===== 一覧画面 =====
-    function ListScreen({ user, records, preLevels, revLevels, onAdd, onEdit, onDelete, onSettings, onLogout }) {
+    function ListScreen({ user, records, preLevels, revLevels, onAdd, onEdit, onDelete, onSettings, onExamReview, onLogout }) {
       const total = records.length;
       const withScore = records.filter(r => r.score !== null && r.score !== undefined);
       const avgScore = withScore.length
@@ -831,6 +1153,7 @@
             </div>
             <div style={{ display: "flex", gap: 6 }}>
               <button className="btn btn-sm btn-primary" onClick={onAdd}>＋ 記録する</button>
+              <button className="btn btn-sm" onClick={onExamReview} title="考査の振り返り">📝</button>
               <button className="btn btn-sm" onClick={onSettings} title="ラベル設定">⚙</button>
               <button className="btn btn-sm" onClick={onLogout} title="ログアウト">↩</button>
             </div>
@@ -856,6 +1179,20 @@
                 </div>
               </div>
             )}
+
+            {/* 考査振り返りへの導線 */}
+            <button className="exam-nav-btn" onClick={onExamReview}
+              style={{ marginBottom: "1.25rem" }}>
+              <span className="exam-nav-icon">📝</span>
+              <span style={{ flex: 1 }}>
+                <span style={{ fontWeight: 500 }}>考査の振り返りを書く</span>
+                <span style={{ display: "block", fontSize: 11, color: "#888", marginTop: 2 }}>
+                  中間・期末・学年末の振り返りを記入
+                </span>
+              </span>
+              <span style={{ color: "#bbb" }}>›</span>
+            </button>
+
             <div className="card">
               {records.length === 0
                 ? (
@@ -976,12 +1313,17 @@
           onCancel={() => setView("list")} />
       );
 
+      if (view === "examReview") return (
+        <ExamReviewScreen uid={user.uid} onBack={() => setView("list")} />
+      );
+
       return (
         <ListScreen user={user} records={records} preLevels={preLevels} revLevels={revLevels}
           onAdd={() => setView("add")}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onSettings={() => setView("settings")}
+          onExamReview={() => setView("examReview")}
           onLogout={() => auth.signOut()} />
       );
     }
