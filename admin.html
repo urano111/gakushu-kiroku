@@ -755,6 +755,122 @@
       align-items: center;
       gap: 5px
     }
+
+    /* ===== 組み込みブラウザ警告 ===== */
+    .iab-wrap {
+      min-height: 100vh;
+      background: #f8f7f3;
+      padding: 1.5rem 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center
+    }
+
+    .iab-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2rem 1.5rem;
+      max-width: 460px;
+      width: 100%;
+      margin-top: 2rem;
+      border: 0.5px solid rgba(0, 0, 0, 0.1)
+    }
+
+    .iab-icon {
+      font-size: 48px;
+      text-align: center;
+      margin-bottom: 1rem
+    }
+
+    .iab-title {
+      font-size: 18px;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 1rem;
+      color: #1a1a1a
+    }
+
+    .iab-msg {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #444;
+      margin-bottom: 1.25rem;
+      padding: 12px 14px;
+      background: #FAEEDA;
+      border: 0.5px solid #EF9F27;
+      border-radius: 8px
+    }
+
+    .iab-steps {
+      background: #f8f7f3;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 1.25rem
+    }
+
+    .iab-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #1a1a1a
+    }
+
+    .iab-step-num {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      background: #1D9E75;
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: 1px
+    }
+
+    .iab-btn-secondary {
+      width: 100%;
+      padding: 12px 16px;
+      background: #fff;
+      color: #1a1a1a;
+      border: 0.5px solid rgba(0, 0, 0, 0.18);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .15s
+    }
+
+    .iab-btn-secondary:hover {
+      background: #f8f7f3
+    }
+
+    .iab-url {
+      background: #f0efe9;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      word-break: break-all;
+      font-family: 'DM Mono', monospace;
+      color: #555;
+      margin-bottom: 12px;
+      border: 0.5px solid rgba(0, 0, 0, 0.08)
+    }
+
+    .iab-toast {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #E1F5EE;
+      color: #085041;
+      border-radius: 6px;
+      font-size: 12px;
+      text-align: center
+    }
   </style>
 </head>
 
@@ -768,7 +884,7 @@
        ============================================================ */
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyAVelNNRZ1PrtZISjHSJk6GvrzfCUqRlfY",
-      authDomain: "urano111.github.io",
+      authDomain: "gakushu-kiroku.firebaseapp.com",
       databaseURL: "https://gakushu-kiroku-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "gakushu-kiroku",
       storageBucket: "gakushu-kiroku.firebasestorage.app",
@@ -1347,6 +1463,117 @@
     }
 
     // ===== メインアプリ =====
+    // ===== 組み込みブラウザ検知 =====
+    function detectInAppBrowser() {
+      const ua = navigator.userAgent || "";
+      if (location.pathname.indexOf("/__/auth/") !== -1) return null;
+      if (/GSA\//i.test(ua) && !/Safari/i.test(ua)) return "google";
+      if (/iPhone|iPad|iPod/.test(ua) && !/Safari/i.test(ua)) {
+        if (/CriOS/i.test(ua)) return null;
+        if (/FxiOS/i.test(ua)) return null;
+        if (/EdgiOS/i.test(ua)) return null;
+        return "ios_webview";
+      }
+      if (/Line\//i.test(ua)) return "line";
+      if (/FBAN|FBAV|FB_IAB|Instagram/i.test(ua)) return "facebook";
+      if (/Twitter/i.test(ua)) return "twitter";
+      if (/Android/i.test(ua) && /wv\)/i.test(ua)) return "android_webview";
+      return null;
+    }
+
+    // ===== 組み込みブラウザ警告画面 =====
+    function InAppBrowserWarning() {
+      const [copied, setCopied] = useState(false);
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent || "");
+      const url = window.location.href;
+
+      function handleCopy() {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2500);
+            });
+          } else {
+            const ta = document.createElement("textarea");
+            ta.value = url;
+            ta.style.position = "fixed"; ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2500);
+          }
+        } catch (e) {
+          alert("コピーできませんでした。下のURLを手で選択してコピーしてください。");
+        }
+      }
+
+      return (
+        <div className="iab-wrap">
+          <div className="iab-box">
+            <div className="iab-icon">📱</div>
+            <div className="iab-title">Safariまたはブラウザで開いてください</div>
+            <div className="iab-msg">
+              現在、アプリ内ブラウザで開かれているため、Googleログインができません。
+              下の手順で<strong>Safari</strong>（iPhone）または<strong>Chrome</strong>（Android）で開き直してください。
+            </div>
+
+            <div className="iab-steps">
+              {isIOS ? (
+                <>
+                  <div className="iab-step">
+                    <div className="iab-step-num">1</div>
+                    <div>画面の<strong>右上または右下の「…」「共有」ボタン</strong>をタップ</div>
+                  </div>
+                  <div className="iab-step">
+                    <div className="iab-step-num">2</div>
+                    <div><strong>「Safariで開く」</strong>を選ぶ</div>
+                  </div>
+                  <div className="iab-step">
+                    <div className="iab-step-num">3</div>
+                    <div>Safariが開いたら、Googleアカウントでログインしてください</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="iab-step">
+                    <div className="iab-step-num">1</div>
+                    <div>画面右上の<strong>「︙」（3点メニュー）</strong>をタップ</div>
+                  </div>
+                  <div className="iab-step">
+                    <div className="iab-step-num">2</div>
+                    <div><strong>「Chromeで開く」</strong>または「ブラウザで開く」を選ぶ</div>
+                  </div>
+                  <div className="iab-step">
+                    <div className="iab-step-num">3</div>
+                    <div>Chromeが開いたら、Googleアカウントでログインしてください</div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <button className="iab-btn-secondary" onClick={handleCopy}>
+              📋 このページのURLをコピーする
+            </button>
+            {copied && (
+              <div className="iab-toast">
+                ✓ URLをコピーしました。ブラウザを開いて貼り付けてください。
+              </div>
+            )}
+
+            <div style={{ marginTop: 16, fontSize: 11, color: "#888", lineHeight: 1.6 }}>
+              <strong>うまく開けない場合：</strong><br />
+              ・下のURLを長押しでコピーし、Safari/Chromeのアドレスバーに貼り付け<br />
+              ・または、ブラウザのブックマークから開く
+            </div>
+            <div className="iab-url" style={{ marginTop: 8 }}>{url}</div>
+          </div>
+        </div>
+      );
+    }
+
     function App() {
       const [authState, setAuthState] = useState("loading");
       const [user, setUser] = useState(null);
@@ -1372,7 +1599,12 @@
       return <AdminScreen user={user} />;
     }
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    const _inAppBrowser = detectInAppBrowser();
+    if (_inAppBrowser) {
+      ReactDOM.createRoot(document.getElementById("root")).render(<InAppBrowserWarning />);
+    } else {
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    }
   </script>
 </body>
 
