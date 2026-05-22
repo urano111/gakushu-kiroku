@@ -11,6 +11,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://unpkg.com/tesseract.js@5.1.0/dist/tesseract.min.js"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -676,6 +677,73 @@
     .exam-nav-icon {
       font-size: 18px
     }
+
+    /* ===== OCR関連 ===== */
+    .ocr-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap
+    }
+
+    .ocr-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: #EDE9FE;
+      border: 0.5px solid #C4B5FD;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: inherit;
+      color: #5B21B6;
+      cursor: pointer;
+      transition: background .15s
+    }
+
+    .ocr-btn:hover {
+      background: #DDD6FE
+    }
+
+    .ocr-btn:disabled {
+      opacity: .5;
+      cursor: default
+    }
+
+    .ocr-status {
+      font-size: 11px;
+      color: #5B21B6;
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .ocr-progress-bar {
+      flex: 1;
+      max-width: 160px;
+      height: 4px;
+      background: #EDE9FE;
+      border-radius: 99px;
+      overflow: hidden
+    }
+
+    .ocr-progress-fill {
+      height: 100%;
+      background: #8B5CF6;
+      transition: width .2s
+    }
+
+    .ocr-hint {
+      font-size: 11px;
+      color: #888;
+      margin-top: 2px;
+      line-height: 1.4
+    }
+
+    .ocr-file-input {
+      display: none
+    }
   </style>
 </head>
 
@@ -869,6 +937,103 @@
       );
     }
 
+    // ===== OCR付きテキストエリア =====
+    function OcrTextarea({ value, onChange, fieldId, placeholder }) {
+      const [ocrStatus, setOcrStatus] = useState(""); // "", "loading", "running", "done", "error"
+      const [progress, setProgress] = useState(0);
+      const fileInputRef = React.useRef(null);
+
+      async function handleFile(e) {
+        const file = e.target.files?.[0];
+        e.target.value = ""; // 同じファイルを再選択できるようにリセット
+        if (!file) return;
+        if (typeof window.Tesseract === "undefined") {
+          alert("OCR機能の読み込みに失敗しました。ページを再読み込みしてください。");
+          return;
+        }
+
+        setOcrStatus("loading");
+        setProgress(0);
+
+        try {
+          const result = await window.Tesseract.recognize(file, "jpn", {
+            logger: m => {
+              if (m.status === "recognizing text") {
+                setOcrStatus("running");
+                setProgress(Math.round(m.progress * 100));
+              } else if (m.status === "loading tesseract core" || m.status === "initializing tesseract"
+                || m.status === "loading language traineddata" || m.status === "initializing api") {
+                setOcrStatus("loading");
+              }
+            },
+          });
+          const text = (result?.data?.text || "").trim();
+          if (!text) {
+            setOcrStatus("error");
+            alert("文字が認識できませんでした。\n・もう少し明るく撮影する\n・文字をまっすぐ・大きく写す\nなどを試してみてください。");
+            setTimeout(() => setOcrStatus(""), 500);
+            return;
+          }
+          // 既存の入力に追記（空なら置き換え）
+          const merged = value && value.trim()
+            ? value + "\n" + text
+            : text;
+          onChange(merged);
+          setOcrStatus("done");
+          setTimeout(() => setOcrStatus(""), 1500);
+        } catch (err) {
+          console.error(err);
+          setOcrStatus("error");
+          alert("文字起こしに失敗しました。もう一度試してください。");
+          setTimeout(() => setOcrStatus(""), 500);
+        }
+      }
+
+      const busy = ocrStatus === "loading" || ocrStatus === "running";
+
+      return (
+        <div>
+          <div className="ocr-row">
+            <button type="button" className="ocr-btn"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={busy}>
+              📷 写真から文字起こし
+            </button>
+            <input ref={fileInputRef} type="file"
+              accept="image/*"
+              className="ocr-file-input"
+              onChange={handleFile} />
+          </div>
+          {ocrStatus === "loading" && (
+            <div className="ocr-status">
+              <span>準備中…（初回は10〜30秒ほどかかります）</span>
+            </div>
+          )}
+          {ocrStatus === "running" && (
+            <div className="ocr-status">
+              <span>文字起こし中…</span>
+              <div className="ocr-progress-bar">
+                <div className="ocr-progress-fill" style={{ width: progress + "%" }} />
+              </div>
+              <span>{progress}%</span>
+            </div>
+          )}
+          {ocrStatus === "done" && (
+            <div className="ocr-status" style={{ color: "#0F6E56" }}>
+              ✓ 文字起こしが完了しました。間違いがあれば手で直してください。
+            </div>
+          )}
+          <textarea className="exam-textarea"
+            placeholder={placeholder}
+            value={value}
+            onChange={e => onChange(e.target.value)} />
+          <div className="ocr-hint">
+            💡 写真は保存されません。文字起こしの結果だけが入力欄に追加されます。手書きの文字は読み取り精度が落ちる場合があります。
+          </div>
+        </div>
+      );
+    }
+
     // ===== 考査振り返り画面 =====
     function ExamReviewScreen({ uid, onBack }) {
       const [selectedExam, setSelectedExam] = useState(EXAM_LIST[0].id);
@@ -980,8 +1145,9 @@
                   </div>
                   <div className="exam-field">
                     <label className="exam-field-label">問題と正解</label>
-                    <textarea className="exam-textarea"
-                      value={form.task1Problem} onChange={e => set("task1Problem", e.target.value)} />
+                    <OcrTextarea
+                      value={form.task1Problem}
+                      onChange={v => set("task1Problem", v)} />
                   </div>
                   <div className="exam-field">
                     <label className="exam-field-label">正解するために頑張ったこと</label>
@@ -1000,8 +1166,9 @@
                   </div>
                   <div className="exam-field">
                     <label className="exam-field-label">問題と正解</label>
-                    <textarea className="exam-textarea"
-                      value={form.task2Problem} onChange={e => set("task2Problem", e.target.value)} />
+                    <OcrTextarea
+                      value={form.task2Problem}
+                      onChange={v => set("task2Problem", v)} />
                   </div>
                   <div className="exam-field">
                     <label className="exam-field-label">次はどう対策（行動）したいか</label>
