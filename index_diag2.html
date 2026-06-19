@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>診断2 - Babelなし</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #f5f4f0; }
+    .log { background: #fff; padding: 12px; border-radius: 8px; margin-bottom: 8px; }
+    .ok { color: #0F6E56; }
+    .err { color: #D85A30; }
+    .info { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>🔍 診断2: Babelを使わないテスト</h1>
+  <div id="log"></div>
+
+  <script>
+    var logEl = document.getElementById('log');
+    var startTime = Date.now();
+    function log(msg, type) {
+      var elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+      var div = document.createElement('div');
+      div.className = 'log ' + (type || 'info');
+      div.textContent = '[' + elapsed + 's] ' + msg;
+      logEl.appendChild(div);
+      console.log('[' + elapsed + 's]', msg);
+    }
+    window.addEventListener('error', function(e) {
+      log('ERROR: ' + e.message + ' (' + (e.filename || '').split('/').pop() + ':' + e.lineno + ')', 'err');
+    });
+    log('診断2 開始', 'ok');
+    log('User Agent: ' + navigator.userAgent);
+  </script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script>log('firebase-app: ' + (typeof firebase !== 'undefined' ? 'OK v' + firebase.SDK_VERSION : 'NG'), typeof firebase !== 'undefined' ? 'ok' : 'err');</script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script>log('firebase-auth: ' + (typeof firebase !== 'undefined' && firebase.auth ? 'OK' : 'NG'), (typeof firebase !== 'undefined' && firebase.auth) ? 'ok' : 'err');</script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script>log('firebase-firestore: ' + (typeof firebase !== 'undefined' && firebase.firestore ? 'OK' : 'NG'), (typeof firebase !== 'undefined' && firebase.firestore) ? 'ok' : 'err');</script>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script>log('React: ' + (typeof React !== 'undefined' ? 'OK v' + React.version : 'NG'), typeof React !== 'undefined' ? 'ok' : 'err');</script>
+
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script>log('ReactDOM: ' + (typeof ReactDOM !== 'undefined' ? 'OK' : 'NG'), typeof ReactDOM !== 'undefined' ? 'ok' : 'err');</script>
+
+  <script>
+    log('--- Babelなしで全部読めた！ ---', 'ok');
+    log('結論: Babel Standalone が真犯人です', 'ok');
+  </script>
+</body>
+</html>
