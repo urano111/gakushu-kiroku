@@ -1,0 +1,1858 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学習記録ノート</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <!-- Tesseract.js（OCR機能）：CDN障害により一時無効化 -->
+  <!-- <script src="https://unpkg.com/tesseract.js@5.1.0/dist/tesseract.min.js"></script> -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script>
+    // 各ライブラリの読み込み状況をチェック
+    (function() {
+      if (window.__diag) {
+        window.__diag('firebase: ' + (typeof firebase !== 'undefined' ? 'OK (v' + (firebase.SDK_VERSION || '?') + ')' : 'NOT LOADED'),
+          typeof firebase !== 'undefined' ? 'ok' : 'err');
+        window.__diag('React: ' + (typeof React !== 'undefined' ? 'OK (v' + (React.version || '?') + ')' : 'NOT LOADED'),
+          typeof React !== 'undefined' ? 'ok' : 'err');
+        window.__diag('ReactDOM: ' + (typeof ReactDOM !== 'undefined' ? 'OK' : 'NOT LOADED'),
+          typeof ReactDOM !== 'undefined' ? 'ok' : 'err');
+        window.__diag('Babel: ' + (typeof Babel !== 'undefined' ? 'OK (v' + (Babel.version || '?') + ')' : 'NOT LOADED'),
+          typeof Babel !== 'undefined' ? 'ok' : 'err');
+      }
+    })();
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: #f5f4f0;
+      color: #1a1a1a;
+      min-height: 100vh
+    }
+
+    .app {
+      min-height: 100vh;
+      background: #f5f4f0
+    }
+
+    .header {
+      background: #fff;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+      padding: 0 1.25rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: .01em
+    }
+
+    .header-sub {
+      font-size: 11px;
+      color: #888;
+      margin-top: 1px
+    }
+
+    .content {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 1.25rem
+    }
+
+    .card {
+      background: #fff;
+      border: 0.5px solid rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      overflow: hidden
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      border: 0.5px solid rgba(0, 0, 0, 0.18);
+      background: transparent;
+      color: #1a1a1a;
+      transition: background .15s
+    }
+
+    .btn:hover {
+      background: rgba(0, 0, 0, 0.05)
+    }
+
+    .btn:disabled {
+      opacity: .4;
+      cursor: default
+    }
+
+    .btn-primary {
+      background: #0F6E56;
+      color: #fff;
+      border-color: #0F6E56
+    }
+
+    .btn-primary:hover {
+      background: #085041
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px
+    }
+
+    .btn-danger {
+      background: none;
+      border: 0.5px solid rgba(180, 0, 0, 0.2);
+      color: #993C1D
+    }
+
+    .btn-danger:hover {
+      background: #FAECE7
+    }
+
+    .btn-google {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      color: #1a1a1a;
+      gap: 10px;
+      padding: 12px 24px;
+      font-size: 15px;
+      border-radius: 8px;
+      width: 100%;
+      justify-content: center
+    }
+
+    .btn-google:hover {
+      background: #f8f8f8;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .1)
+    }
+
+    .input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 0.5px solid rgba(0, 0, 0, 0.18);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #1a1a1a;
+      background: #fff;
+      outline: none
+    }
+
+    .input:focus {
+      border-color: #1D9E75;
+      box-shadow: 0 0 0 3px rgba(29, 158, 117, .12)
+    }
+
+    .label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #888;
+      margin-bottom: 6px;
+      display: block;
+      letter-spacing: .04em;
+      text-transform: uppercase
+    }
+
+    .form-section {
+      padding: 1.25rem;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.08)
+    }
+
+    .form-section:last-child {
+      border-bottom: none
+    }
+
+    .toggle-group {
+      display: flex;
+      gap: 6px
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 10px 4px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+      cursor: pointer;
+      border: 0.5px solid rgba(0, 0, 0, 0.15);
+      background: #fff;
+      color: #888;
+      transition: all .15s;
+      text-align: center;
+      line-height: 1.3
+    }
+
+    .toggle-btn .lv-label {
+      display: block;
+      font-size: 10px;
+      margin-top: 3px
+    }
+
+    .toggle-btn.lv0.active {
+      background: #FAECE7;
+      border-color: #D85A30;
+      color: #4A1B0C;
+      font-weight: 500
+    }
+
+    .toggle-btn.lv1.active {
+      background: #FAEEDA;
+      border-color: #EF9F27;
+      color: #412402;
+      font-weight: 500
+    }
+
+    .toggle-btn.lv2.active {
+      background: #E1F5EE;
+      border-color: #1D9E75;
+      color: #085041;
+      font-weight: 500
+    }
+
+    .toggle-btn.lv3.active {
+      background: #E1F5EE;
+      border-color: #085041;
+      color: #04342C;
+      font-weight: 500
+    }
+
+    .record-item {
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+      padding: 1rem 1.25rem;
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      gap: .75rem;
+      align-items: start
+    }
+
+    .record-item:last-child {
+      border-bottom: none
+    }
+
+    .date-box {
+      text-align: center
+    }
+
+    .date-m {
+      font-size: 11px;
+      color: #888
+    }
+
+    .date-d {
+      font-size: 22px;
+      font-weight: 500;
+      line-height: 1.1;
+      font-family: 'DM Mono', monospace
+    }
+
+    .record-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      line-height: 1.4
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 99px;
+      font-weight: 500
+    }
+
+    .badge-lv0 {
+      background: #FAECE7;
+      color: #993C1D
+    }
+
+    .badge-lv1 {
+      background: #FAEEDA;
+      color: #633806
+    }
+
+    .badge-lv2 {
+      background: #E1F5EE;
+      color: #0F6E56
+    }
+
+    .badge-lv3 {
+      background: #E1F5EE;
+      color: #04342C
+    }
+
+    .badge-subject {
+      background: #EDE9FE;
+      color: #5B21B6
+    }
+
+    .badge-score {
+      background: #f0efe9;
+      color: #555;
+      font-family: 'DM Mono', monospace
+    }
+
+    .score-hi {
+      background: #E1F5EE;
+      color: #085041
+    }
+
+    .score-mid {
+      background: #FAEEDA;
+      color: #633806
+    }
+
+    .score-lo {
+      background: #FAECE7;
+      color: #4A1B0C
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 1.25rem
+    }
+
+    .stat-card {
+      background: #fff;
+      border: 0.5px solid rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      padding: .875rem 1rem
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 4px;
+      letter-spacing: .04em;
+      text-transform: uppercase
+    }
+
+    .stat-val {
+      font-size: 22px;
+      font-weight: 500;
+      font-family: 'DM Mono', monospace;
+      line-height: 1
+    }
+
+    .empty {
+      padding: 3rem 1.25rem;
+      text-align: center;
+      color: #888;
+      font-size: 14px
+    }
+
+    .record-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #bbb;
+      font-size: 14px;
+      padding: 4px;
+      border-radius: 6px;
+      line-height: 1;
+      white-space: nowrap
+    }
+
+    .icon-btn:hover.edit {
+      color: #1D9E75;
+      background: #E1F5EE
+    }
+
+    .icon-btn:hover.del {
+      color: #D85A30;
+      background: #FAECE7
+    }
+
+    .score-row {
+      display: flex;
+      gap: 8px;
+      align-items: center
+    }
+
+    .score-sep {
+      font-size: 14px;
+      color: #888
+    }
+
+    .error-msg {
+      font-size: 13px;
+      color: #D85A30;
+      margin-top: 8px;
+      text-align: center
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #888;
+      font-size: 14px
+    }
+
+    .login-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 360px
+    }
+
+    .login-icon {
+      font-size: 40px;
+      text-align: center;
+      margin-bottom: 1rem
+    }
+
+    .login-title {
+      font-size: 20px;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 6px
+    }
+
+    .login-sub {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      margin-bottom: 2rem
+    }
+
+    .google-icon {
+      width: 20px;
+      height: 20px
+    }
+
+    .settings-tab-row {
+      display: flex;
+      border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+      margin-bottom: 1.25rem
+    }
+
+    .settings-tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      color: #888;
+      border-bottom: 2px solid transparent;
+      transition: all .15s
+    }
+
+    .settings-tab.active {
+      color: #0F6E56;
+      border-bottom-color: #0F6E56
+    }
+
+    .settings-row {
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px
+    }
+
+    .settings-row:last-child {
+      margin-bottom: 0
+    }
+
+    .settings-symbol {
+      font-size: 17px;
+      text-align: center;
+      padding: 7px 0;
+      border-radius: 8px;
+      font-weight: 500
+    }
+
+    .lv0-bg {
+      background: #FAECE7;
+      color: #4A1B0C
+    }
+
+    .lv1-bg {
+      background: #FAEEDA;
+      color: #412402
+    }
+
+    .lv2-bg {
+      background: #E1F5EE;
+      color: #085041
+    }
+
+    .lv3-bg {
+      background: #E1F5EE;
+      color: #04342C
+    }
+
+    .saved-msg {
+      font-size: 12px;
+      color: #0F6E56;
+      text-align: center;
+      margin-top: 10px;
+      min-height: 18px
+    }
+
+    .edit-banner {
+      background: #E1F5EE;
+      border-bottom: 0.5px solid #1D9E75;
+      padding: 8px 1.25rem;
+      font-size: 12px;
+      color: #085041;
+      text-align: center
+    }
+
+    /* ===== 考査振り返り ===== */
+    .exam-select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 0.5px solid rgba(0, 0, 0, 0.18);
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      font-weight: 500;
+      color: #1a1a1a;
+      background: #fff;
+      outline: none;
+      cursor: pointer
+    }
+
+    .exam-select:focus {
+      border-color: #1D9E75;
+      box-shadow: 0 0 0 3px rgba(29, 158, 117, .12)
+    }
+
+    .exam-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 500;
+      margin-left: 6px;
+      white-space: nowrap
+    }
+
+    .exam-status.done {
+      background: #E1F5EE;
+      color: #085041
+    }
+
+    .exam-status.empty {
+      background: #f0efe9;
+      color: #888
+    }
+
+    .exam-goal-box {
+      background: #FAEEDA;
+      border: 0.5px solid #EF9F27;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-top: 6px
+    }
+
+    .exam-goal-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #633806;
+      margin-bottom: 6px
+    }
+
+    .exam-task {
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 0.5px solid rgba(0, 0, 0, 0.08)
+    }
+
+    .exam-task:first-of-type {
+      border-top: none;
+      margin-top: 0;
+      padding-top: 0
+    }
+
+    .exam-task-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #0F6E56;
+      margin-bottom: 4px
+    }
+
+    .exam-task-desc {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.5
+    }
+
+    .exam-field {
+      margin-bottom: 10px
+    }
+
+    .exam-field:last-child {
+      margin-bottom: 0
+    }
+
+    .exam-field-label {
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 4px;
+      display: block;
+      font-weight: 500
+    }
+
+    .exam-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 0.5px solid rgba(0, 0, 0, 0.18);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #1a1a1a;
+      background: #fff;
+      outline: none;
+      resize: vertical;
+      min-height: 80px;
+      line-height: 1.5
+    }
+
+    .exam-textarea:focus {
+      border-color: #1D9E75;
+      box-shadow: 0 0 0 3px rgba(29, 158, 117, .12)
+    }
+
+    .exam-nav-btn {
+      display: block;
+      width: 100%;
+      padding: 14px 16px;
+      background: #fff;
+      border: 0.5px solid rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background .15s
+    }
+
+    .exam-nav-btn:hover {
+      background: #f8f7f3
+    }
+
+    .exam-nav-icon {
+      font-size: 18px
+    }
+
+    /* ===== OCR関連 ===== */
+    .ocr-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+      flex-wrap: wrap
+    }
+
+    .ocr-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: #EDE9FE;
+      border: 0.5px solid #C4B5FD;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: inherit;
+      color: #5B21B6;
+      cursor: pointer;
+      transition: background .15s
+    }
+
+    .ocr-btn:hover {
+      background: #DDD6FE
+    }
+
+    .ocr-btn:disabled {
+      opacity: .5;
+      cursor: default
+    }
+
+    .ocr-status {
+      font-size: 11px;
+      color: #5B21B6;
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .ocr-progress-bar {
+      flex: 1;
+      max-width: 160px;
+      height: 4px;
+      background: #EDE9FE;
+      border-radius: 99px;
+      overflow: hidden
+    }
+
+    .ocr-progress-fill {
+      height: 100%;
+      background: #8B5CF6;
+      transition: width .2s
+    }
+
+    .ocr-hint {
+      font-size: 11px;
+      color: #888;
+      margin-top: 2px;
+      line-height: 1.4
+    }
+
+    .ocr-file-input {
+      display: none
+    }
+
+    /* ===== 組み込みブラウザ警告 ===== */
+    .iab-wrap {
+      min-height: 100vh;
+      background: #f8f7f3;
+      padding: 1.5rem 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center
+    }
+
+    .iab-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 2rem 1.5rem;
+      max-width: 460px;
+      width: 100%;
+      margin-top: 2rem;
+      border: 0.5px solid rgba(0, 0, 0, 0.1)
+    }
+
+    .iab-icon {
+      font-size: 48px;
+      text-align: center;
+      margin-bottom: 1rem
+    }
+
+    .iab-title {
+      font-size: 18px;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 1rem;
+      color: #1a1a1a
+    }
+
+    .iab-msg {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #444;
+      margin-bottom: 1.25rem;
+      padding: 12px 14px;
+      background: #FAEEDA;
+      border: 0.5px solid #EF9F27;
+      border-radius: 8px
+    }
+
+    .iab-steps {
+      background: #f8f7f3;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 1.25rem
+    }
+
+    .iab-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #1a1a1a
+    }
+
+    .iab-step-num {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      background: #1D9E75;
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: 1px
+    }
+
+    .iab-btn-primary {
+      width: 100%;
+      padding: 14px 16px;
+      background: #1D9E75;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background .15s
+    }
+
+    .iab-btn-primary:hover {
+      background: #168661
+    }
+
+    .iab-btn-secondary {
+      width: 100%;
+      padding: 12px 16px;
+      background: #fff;
+      color: #1a1a1a;
+      border: 0.5px solid rgba(0, 0, 0, 0.18);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .15s
+    }
+
+    .iab-btn-secondary:hover {
+      background: #f8f7f3
+    }
+
+    .iab-url {
+      background: #f0efe9;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      word-break: break-all;
+      font-family: 'DM Mono', monospace;
+      color: #555;
+      margin-bottom: 12px;
+      border: 0.5px solid rgba(0, 0, 0, 0.08)
+    }
+
+    .iab-toast {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: #E1F5EE;
+      color: #085041;
+      border-radius: 6px;
+      font-size: 12px;
+      text-align: center
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ===== 診断パネル（成功時は非表示、問題時のみ表示） ===== -->
+  <div id="diag-panel" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#fff;border-bottom:2px solid #1D9E75;padding:12px 16px;font-family:monospace;font-size:13px;line-height:1.6;max-height:80vh;overflow-y:auto;">
+    <div style="font-weight:bold;color:#0F6E56;margin-bottom:6px;">🔍 診断モード</div>
+    <div id="diag-log" style="white-space:pre-wrap;color:#333;"></div>
+  </div>
+
+  <script>
+    // 診断用ロガー：画面とコンソール両方に出力
+    (function() {
+      var logEl = document.getElementById('diag-log');
+      var startTime = Date.now();
+      window.__diag = function(msg, type) {
+        type = type || 'info';
+        var elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+        var color = type === 'ok' ? '#0F6E56' : type === 'err' ? '#D85A30' : type === 'warn' ? '#EF9F27' : '#666';
+        var icon = type === 'ok' ? '✓' : type === 'err' ? '✗' : type === 'warn' ? '⚠' : '•';
+        var line = '[' + elapsed + 's] ' + icon + ' ' + msg;
+        console.log(line);
+        if (logEl) {
+          var div = document.createElement('div');
+          div.style.color = color;
+          div.textContent = line;
+          logEl.appendChild(div);
+        }
+      };
+
+      // グローバルエラーキャッチャー
+      window.addEventListener('error', function(e) {
+        var msg = 'ERROR: ' + (e.message || 'unknown');
+        if (e.filename) msg += ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')';
+        window.__diag(msg, 'err');
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        window.__diag('PROMISE REJECTION: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)), 'err');
+      });
+
+      window.__diag('診断開始', 'ok');
+      window.__diag('User Agent: ' + navigator.userAgent.substring(0, 80));
+    })();
+  </script>
+
+  <div id="root" style="margin-top:200px;"></div>
+  <script type="text/babel">
+    if (window.__diag) window.__diag('Babel変換: 成功（type=text/babelが実行された）', 'ok');
+
+    const { useState, useEffect } = React;
+
+    /* ============================================================
+       ★ ここを編集してください（Firebase コンソールからコピー）
+       ============================================================ */
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyAVelNNRZ1PrtZISjHSJk6GvrzfCUqRlfY",
+      authDomain: "gakushu-kiroku.firebaseapp.com",
+      databaseURL: "https://gakushu-kiroku-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "gakushu-kiroku",
+      storageBucket: "gakushu-kiroku.firebasestorage.app",
+      messagingSenderId: "946745693383",
+      appId: "1:946745693383:web:a9dd9ad5df3314dedb9ae2"
+    };
+    const SCHOOL_DOMAIN = "tokyo.soka.ed.jp";
+    /* ============================================================ */
+
+    if (window.__diag) window.__diag('FIREBASE_CONFIG 設定完了', 'ok');
+
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      if (window.__diag) window.__diag('firebase.initializeApp: 成功', 'ok');
+    } catch (e) {
+      if (window.__diag) window.__diag('firebase.initializeApp 失敗: ' + e.message, 'err');
+      throw e;
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    if (window.__diag) window.__diag('auth / db オブジェクト取得: 成功', 'ok');
+
+    // ===== デフォルトラベル（予習・復習別） =====
+    const DEFAULT_PRE_LABELS = [
+      "なにもしなかった",
+      "教科書を少し見た",
+      "教科書を読んだ",
+      "動画教材を見た",
+    ];
+    const DEFAULT_REV_LABELS = [
+      "なにもしなかった",
+      "プリントを読み返した",
+      "プリントをやり直した",
+      "問題集を解いた",
+    ];
+    const SYMBOLS = ["×", "△", "〇", "◎"];
+    const CLS = ["lv0", "lv1", "lv2", "lv3"];
+
+    function buildLevels(labels) {
+      return SYMBOLS.map((symbol, i) => ({ value: i, symbol, label: labels[i], cls: CLS[i] }));
+    }
+
+    function userCol(uid) { return db.collection("users").doc(uid).collection("records"); }
+    function settingsDoc(uid) { return db.collection("users").doc(uid).collection("settings").doc("labels"); }
+    function examReviewCol(uid) { return db.collection("users").doc(uid).collection("examReviews"); }
+
+    // ===== 考査リスト =====
+    const EXAM_LIST = [
+      { id: "term1_mid",   name: "1学期中間考査" },
+      { id: "term1_final", name: "1学期期末考査" },
+      { id: "term2_mid",   name: "2学期中間考査" },
+      { id: "term2_final", name: "2学期期末考査" },
+      { id: "year_final",  name: "学年末考査" },
+    ];
+
+    function getScoreClass(score, max) {
+      const r = score / max;
+      return r >= 0.8 ? "score-hi" : r >= 0.5 ? "score-mid" : "score-lo";
+    }
+    function fmtDate(d) {
+      const dt = new Date(d + "T00:00:00");
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return { m: months[dt.getMonth()], d: String(dt.getDate()).padStart(2, "0") };
+    }
+
+    // ===== レベル選択ボタン =====
+    function LevelToggle({ value, onChange, levels }) {
+      return (
+        <div className="toggle-group">
+          {levels.map(lv => (
+            <button key={lv.value}
+              className={`toggle-btn ${lv.cls}${value === lv.value ? " active" : ""}`}
+              onClick={() => onChange(lv.value)} type="button">
+              {lv.symbol}
+              <span className="lv-label">{lv.label}</span>
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    // ===== 設定画面（予習・復習タブ切り替え） =====
+    function SettingsScreen({ uid, currentPreLabels, currentRevLabels, onSave, onCancel }) {
+      const [tab, setTab] = useState("pre");
+      const [preLabels, setPreLabels] = useState([...currentPreLabels]);
+      const [revLabels, setRevLabels] = useState([...currentRevLabels]);
+      const [saving, setSaving] = useState(false);
+      const [savedMsg, setSavedMsg] = useState("");
+
+      const labels = tab === "pre" ? preLabels : revLabels;
+      const setLabels = tab === "pre" ? setPreLabels : setRevLabels;
+      const defaults = tab === "pre" ? DEFAULT_PRE_LABELS : DEFAULT_REV_LABELS;
+
+      function setLabel(i, v) {
+        const next = [...labels]; next[i] = v; setLabels(next);
+      }
+
+      async function handleSave() {
+        setSaving(true);
+        await settingsDoc(uid).set({ preLabels, revLabels });
+        onSave(preLabels, revLabels);
+        setSaving(false);
+        setSavedMsg("保存しました！");
+        setTimeout(() => setSavedMsg(""), 2000);
+      }
+
+      return (
+        <div className="app">
+          <div className="header">
+            <button className="btn btn-sm" onClick={onCancel}>← 戻る</button>
+            <span className="header-title">ラベルのカスタマイズ</span>
+            <button className="btn btn-sm btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? "保存中…" : "保存"}
+            </button>
+          </div>
+          <div className="content">
+            <div className="card">
+              <div className="settings-tab-row">
+                <button className={`settings-tab${tab === "pre" ? " active" : ""}`} onClick={() => setTab("pre")}>予習ラベル</button>
+                <button className={`settings-tab${tab === "rev" ? " active" : ""}`} onClick={() => setTab("rev")}>復習ラベル</button>
+              </div>
+              <div style={{ padding: "0 1.25rem 1.25rem" }}>
+                <div className="label" style={{ marginBottom: 14 }}>×△〇◎それぞれの意味を自由に変更できます（最大20文字）</div>
+                {SYMBOLS.map((sym, i) => (
+                  <div className="settings-row" key={i}>
+                    <div className={`settings-symbol lv${i}-bg`}>{sym}</div>
+                    <input className="input" value={labels[i]}
+                      onChange={e => setLabel(i, e.target.value)}
+                      placeholder={defaults[i]} maxLength={20} />
+                  </div>
+                ))}
+                <div className="saved-msg">{savedMsg}</div>
+                <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
+                  <button className="btn btn-sm" onClick={() => setLabels([...defaults])}>デフォルトに戻す</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ===== ログイン画面 =====
+    function LoginScreen({ onLogin }) {
+      const [error, setError] = useState("");
+      const [loading, setLoading] = useState(false);
+
+      async function handleGoogle() {
+        setError(""); setLoading(true);
+        try {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          if (SCHOOL_DOMAIN) provider.setCustomParameters({ hd: SCHOOL_DOMAIN });
+          const result = await auth.signInWithPopup(provider);
+          const email = result.user.email || "";
+          if (SCHOOL_DOMAIN && !email.endsWith("@" + SCHOOL_DOMAIN)) {
+            await auth.signOut();
+            setError(`学校のアカウント (@${SCHOOL_DOMAIN}) でログインしてください`);
+          } else { onLogin(result.user); }
+        } catch (e) {
+          if (e.code !== "auth/popup-closed-by-user")
+            setError("ログインに失敗しました。もう一度お試しください。");
+        }
+        setLoading(false);
+      }
+
+      return (
+        <div className="login-wrap">
+          <div className="login-box">
+            <div className="login-icon">📖</div>
+            <div className="login-title">学習記録ノート</div>
+            <div className="login-sub">学校のGoogleアカウントでログインしてください</div>
+            <div className="card" style={{ padding: "1.5rem" }}>
+              <button className="btn btn-google" onClick={handleGoogle} disabled={loading}>
+                <svg className="google-icon" viewBox="0 0 48 48">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                </svg>
+                {loading ? "ログイン中…" : "Googleでログイン"}
+              </button>
+              {error && <div className="error-msg">{error}</div>}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ===== OCR付きテキストエリア =====
+    function OcrTextarea({ value, onChange, fieldId, placeholder }) {
+      const [ocrStatus, setOcrStatus] = useState(""); // "", "loading", "running", "done", "error"
+      const [progress, setProgress] = useState(0);
+      const fileInputRef = React.useRef(null);
+
+      async function handleFile(e) {
+        const file = e.target.files?.[0];
+        e.target.value = ""; // 同じファイルを再選択できるようにリセット
+        if (!file) return;
+        if (typeof window.Tesseract === "undefined") {
+          alert("OCR機能の読み込みに失敗しました。ページを再読み込みしてください。");
+          return;
+        }
+
+        setOcrStatus("loading");
+        setProgress(0);
+
+        try {
+          const result = await window.Tesseract.recognize(file, "jpn", {
+            logger: m => {
+              if (m.status === "recognizing text") {
+                setOcrStatus("running");
+                setProgress(Math.round(m.progress * 100));
+              } else if (m.status === "loading tesseract core" || m.status === "initializing tesseract"
+                || m.status === "loading language traineddata" || m.status === "initializing api") {
+                setOcrStatus("loading");
+              }
+            },
+          });
+          const text = (result?.data?.text || "").trim();
+          if (!text) {
+            setOcrStatus("error");
+            alert("文字が認識できませんでした。\n・もう少し明るく撮影する\n・文字をまっすぐ・大きく写す\nなどを試してみてください。");
+            setTimeout(() => setOcrStatus(""), 500);
+            return;
+          }
+          // 既存の入力に追記（空なら置き換え）
+          const merged = value && value.trim()
+            ? value + "\n" + text
+            : text;
+          onChange(merged);
+          setOcrStatus("done");
+          setTimeout(() => setOcrStatus(""), 1500);
+        } catch (err) {
+          console.error(err);
+          setOcrStatus("error");
+          alert("文字起こしに失敗しました。もう一度試してください。");
+          setTimeout(() => setOcrStatus(""), 500);
+        }
+      }
+
+      const busy = ocrStatus === "loading" || ocrStatus === "running";
+
+      return (
+        <div>
+          <div className="ocr-row">
+            <button type="button" className="ocr-btn"
+              disabled={true}
+              title="OCR機能は現在メンテナンス中です"
+              style={{ opacity: 0.5, cursor: "not-allowed" }}>
+              📷 写真から文字起こし（メンテナンス中）
+            </button>
+            <input ref={fileInputRef} type="file"
+              accept="image/*"
+              className="ocr-file-input"
+              onChange={handleFile} />
+          </div>
+          {ocrStatus === "loading" && (
+            <div className="ocr-status">
+              <span>準備中…（初回は10〜30秒ほどかかります）</span>
+            </div>
+          )}
+          {ocrStatus === "running" && (
+            <div className="ocr-status">
+              <span>文字起こし中…</span>
+              <div className="ocr-progress-bar">
+                <div className="ocr-progress-fill" style={{ width: progress + "%" }} />
+              </div>
+              <span>{progress}%</span>
+            </div>
+          )}
+          {ocrStatus === "done" && (
+            <div className="ocr-status" style={{ color: "#0F6E56" }}>
+              ✓ 文字起こしが完了しました。間違いがあれば手で直してください。
+            </div>
+          )}
+          <textarea className="exam-textarea"
+            placeholder={placeholder}
+            value={value}
+            onChange={e => onChange(e.target.value)} />
+          <div className="ocr-hint">
+            💡 現在、写真からの文字起こし機能はメンテナンス中です。問題と正解はテキストで入力してください。
+          </div>
+        </div>
+      );
+    }
+
+    // ===== 考査振り返り画面 =====
+    function ExamReviewScreen({ uid, onBack }) {
+      const [selectedExam, setSelectedExam] = useState(EXAM_LIST[0].id);
+      const [allReviews, setAllReviews] = useState({}); // {examId: data}
+      const [loading, setLoading] = useState(true);
+      const [saving, setSaving] = useState(false);
+      const [savedMsg, setSavedMsg] = useState("");
+      const [form, setForm] = useState({
+        goal: "", task1Problem: "", task1Effort: "",
+        task2Problem: "", task2Plan: "", task3Reflection: ""
+      });
+
+      // 全考査分を読み込み（完了状態判定用）
+      useEffect(() => {
+        (async () => {
+          setLoading(true);
+          const snap = await examReviewCol(uid).get();
+          const map = {};
+          snap.docs.forEach(doc => { map[doc.id] = doc.data(); });
+          setAllReviews(map);
+          setLoading(false);
+        })();
+      }, [uid]);
+
+      // 選択中の考査が変わったらフォームを差し替え
+      useEffect(() => {
+        const data = allReviews[selectedExam] || {};
+        setForm({
+          goal: data.goal || "",
+          task1Problem: data.task1Problem || "",
+          task1Effort: data.task1Effort || "",
+          task2Problem: data.task2Problem || "",
+          task2Plan: data.task2Plan || "",
+          task3Reflection: data.task3Reflection || "",
+        });
+        setSavedMsg("");
+      }, [selectedExam, allReviews]);
+
+      const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+      const examName = EXAM_LIST.find(e => e.id === selectedExam)?.name || "";
+
+      async function handleSave() {
+        if (saving) return;
+        setSaving(true);
+        const data = {
+          ...form,
+          examId: selectedExam,
+          examName,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        };
+        await examReviewCol(uid).doc(selectedExam).set(data, { merge: true });
+        setAllReviews(prev => ({ ...prev, [selectedExam]: data }));
+        setSaving(false);
+        setSavedMsg("保存しました！");
+        setTimeout(() => setSavedMsg(""), 2000);
+      }
+
+      function isFilled(examId) {
+        const d = allReviews[examId];
+        if (!d) return false;
+        return !!(d.goal || d.task1Problem || d.task1Effort || d.task2Problem || d.task2Plan || d.task3Reflection);
+      }
+
+      if (loading) return <div className="loading">読み込み中…</div>;
+
+      return (
+        <div className="app">
+          <div className="header">
+            <button className="btn btn-sm" onClick={onBack}>← 戻る</button>
+            <span className="header-title">考査の振り返り</span>
+            <button className="btn btn-sm btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? "保存中…" : "保存"}
+            </button>
+          </div>
+          <div className="content">
+            <div className="card">
+              {/* 考査選択 */}
+              <div className="form-section">
+                <label className="label">考査を選んでください</label>
+                <select className="exam-select" value={selectedExam}
+                  onChange={e => setSelectedExam(e.target.value)}>
+                  {EXAM_LIST.map(exam => (
+                    <option key={exam.id} value={exam.id}>
+                      {exam.name}{isFilled(exam.id) ? " ✓ 記入済み" : ""}
+                    </option>
+                  ))}
+                </select>
+                <div style={{ marginTop: 8, fontSize: 12, color: "#888" }}>
+                  【目標】ひとりも残らず全員が、自分なりに考査の結果を分析できるようになる。
+                </div>
+              </div>
+
+              {/* 自分の目標 */}
+              <div className="form-section">
+                <div className="exam-goal-box">
+                  <div className="exam-goal-label">🎯 自分の目標</div>
+                  <textarea className="exam-textarea" style={{ background: "#fff" }}
+                    placeholder="この考査で達成したい自分の目標を書きましょう"
+                    value={form.goal} onChange={e => set("goal", e.target.value)} />
+                </div>
+              </div>
+
+              {/* 課題① */}
+              <div className="form-section">
+                <div className="exam-task">
+                  <div className="exam-task-title">課題① できて嬉しかった・よかったと思う問題</div>
+                  <div className="exam-task-desc">
+                    自分ができて嬉しかった・よかったと思う問題を1つ選び、その問題の概要と答えを書きなさい。また、自分が何を頑張ったから正解できたのかも、自分なりに考えて書きなさい。
+                  </div>
+                  <div className="exam-field">
+                    <label className="exam-field-label">問題と正解</label>
+                    <OcrTextarea
+                      value={form.task1Problem}
+                      onChange={v => set("task1Problem", v)} />
+                  </div>
+                  <div className="exam-field">
+                    <label className="exam-field-label">正解するために頑張ったこと</label>
+                    <textarea className="exam-textarea"
+                      value={form.task1Effort} onChange={e => set("task1Effort", e.target.value)} />
+                  </div>
+                </div>
+              </div>
+
+              {/* 課題② */}
+              <div className="form-section">
+                <div className="exam-task">
+                  <div className="exam-task-title">課題② 正解したかった問題</div>
+                  <div className="exam-task-desc">
+                    自分が正解したかった問題を1つ選んで書き、その問題と答えを書きなさい。また、そのためにどういう風に対策（行動）していくか、自分なりに考えて書きなさい。
+                  </div>
+                  <div className="exam-field">
+                    <label className="exam-field-label">問題と正解</label>
+                    <OcrTextarea
+                      value={form.task2Problem}
+                      onChange={v => set("task2Problem", v)} />
+                  </div>
+                  <div className="exam-field">
+                    <label className="exam-field-label">次はどう対策（行動）したいか</label>
+                    <textarea className="exam-textarea"
+                      value={form.task2Plan} onChange={e => set("task2Plan", e.target.value)} />
+                  </div>
+                </div>
+              </div>
+
+              {/* 課題③ */}
+              <div className="form-section">
+                <div className="exam-task">
+                  <div className="exam-task-title">課題③ 今回の振り返りと次への思い</div>
+                  <div className="exam-task-desc">
+                    今回の考査の結果に対して自分がどう思うかと、次学期への思いを書いてみよう！
+                  </div>
+                  <div className="exam-field">
+                    <textarea className="exam-textarea" style={{ minHeight: 120 }}
+                      value={form.task3Reflection} onChange={e => set("task3Reflection", e.target.value)} />
+                  </div>
+                </div>
+              </div>
+
+              {/* 保存ボタン（下にも配置） */}
+              <div className="form-section" style={{ textAlign: "center" }}>
+                <button className="btn btn-primary" onClick={handleSave} disabled={saving}
+                  style={{ minWidth: 160 }}>
+                  {saving ? "保存中…" : "💾 保存する"}
+                </button>
+                <div className="saved-msg">{savedMsg}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ===== 記録追加・編集画面 =====
+    function EditScreen({ uid, preLevels, revLevels, existing, onSave, onCancel, subjects }) {
+      const isEdit = !!existing;
+      const today = new Date().toISOString().split("T")[0];
+      const [form, setForm] = useState(existing
+        ? {
+          title: existing.title, date: existing.date,
+          subject: existing.subject || "",
+          preStudy: existing.preStudy, review: existing.review,
+          score: existing.score !== null && existing.score !== undefined ? String(existing.score) : "",
+          scoreMax: String(existing.scoreMax ?? 10)
+        }
+        : { title: "", date: today, subject: "", preStudy: null, review: null, score: "", scoreMax: "10" }
+      );
+      const [saving, setSaving] = useState(false);
+      const valid = form.title.trim() && form.preStudy !== null && form.review !== null;
+      const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+      async function handleSave() {
+        if (!valid || saving) return;
+        setSaving(true);
+        const data = {
+          date: form.date, title: form.title.trim(),
+          subject: form.subject.trim(),
+          preStudy: form.preStudy, review: form.review,
+          score: form.score !== "" ? Number(form.score) : null,
+          scoreMax: form.scoreMax !== "" ? Number(form.scoreMax) : 10,
+        };
+        if (isEdit) {
+          await userCol(uid).doc(existing.id).update(data);
+        } else {
+          data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          await userCol(uid).add(data);
+        }
+        onSave();
+        setSaving(false);
+      }
+
+      return (
+        <div className="app">
+          {isEdit && <div className="edit-banner">✏ 記録を編集しています</div>}
+          <div className="header">
+            <button className="btn btn-sm" onClick={onCancel}>← 戻る</button>
+            <span className="header-title">{isEdit ? "記録を編集" : "授業を記録"}</span>
+            <button className="btn btn-sm btn-primary" disabled={!valid || saving} onClick={handleSave}>
+              {saving ? "保存中…" : "保存"}
+            </button>
+          </div>
+          <div className="content">
+            <div className="card">
+              <div className="form-section">
+                <label className="label">教科</label>
+                <input className="input" list="subject-list" placeholder="例：数学、英語、国語…"
+                  value={form.subject} onChange={e => set("subject", e.target.value)} autoFocus />
+                <datalist id="subject-list">
+                  {(subjects || []).map(s => <option key={s} value={s} />)}
+                </datalist>
+              </div>
+              <div className="form-section">
+                <label className="label">授業タイトル</label>
+                <input className="input" placeholder="例：二次方程式" value={form.title}
+                  onChange={e => set("title", e.target.value)} />
+              </div>
+              <div className="form-section">
+                <label className="label">授業日</label>
+                <input className="input" type="date" value={form.date}
+                  onChange={e => set("date", e.target.value)} />
+              </div>
+              <div className="form-section">
+                <label className="label">予習できましたか？</label>
+                <LevelToggle value={form.preStudy} onChange={v => set("preStudy", v)} levels={preLevels} />
+              </div>
+              <div className="form-section">
+                <label className="label">復習できましたか？</label>
+                <LevelToggle value={form.review} onChange={v => set("review", v)} levels={revLevels} />
+              </div>
+              <div className="form-section">
+                <label className="label">小テストの点数（任意）</label>
+                <div className="score-row">
+                  <input className="input" type="number" min="0" placeholder="点数"
+                    value={form.score} onChange={e => set("score", e.target.value)} style={{ width: 100 }} />
+                  <span className="score-sep">／</span>
+                  <input className="input" type="number" min="1" placeholder="満点"
+                    value={form.scoreMax} onChange={e => set("scoreMax", e.target.value)} style={{ width: 80 }} />
+                  <span className="score-sep">点</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ===== 一覧画面 =====
+    function ListScreen({ user, records, preLevels, revLevels, onAdd, onEdit, onDelete, onSettings, onExamReview, onLogout }) {
+      const total = records.length;
+      const withScore = records.filter(r => r.score !== null && r.score !== undefined);
+      const avgScore = withScore.length
+        ? Math.round(withScore.reduce((s, r) => s + r.score / r.scoreMax * 100, 0) / withScore.length)
+        : null;
+      const preAvg = total
+        ? Math.round(records.reduce((s, r) => s + (r.preStudy ?? 0), 0) / total / 3 * 100)
+        : null;
+      const displayName = user.displayName || user.email.split("@")[0];
+
+      return (
+        <div className="app">
+          <div className="header">
+            <div>
+              <div className="header-title">学習記録ノート</div>
+              <div className="header-sub">{displayName}</div>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button className="btn btn-sm btn-primary" onClick={onAdd}>＋ 記録する</button>
+              <button className="btn btn-sm" onClick={onExamReview} title="考査の振り返り">📝</button>
+              <button className="btn btn-sm" onClick={onSettings} title="ラベル設定">⚙</button>
+              <button className="btn btn-sm" onClick={onLogout} title="ログアウト">↩</button>
+            </div>
+          </div>
+          <div className="content">
+            {total > 0 && (
+              <div className="stat-grid">
+                <div className="stat-card">
+                  <div className="stat-label">授業数</div>
+                  <div className="stat-val">{total}</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">予習達成度</div>
+                  <div className="stat-val">{preAvg}<span style={{ fontSize: 14, fontFamily: "inherit" }}>%</span></div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-label">{avgScore !== null ? "平均点" : "記録数"}</div>
+                  <div className="stat-val">
+                    {avgScore !== null
+                      ? <>{avgScore}<span style={{ fontSize: 14, fontFamily: "inherit" }}>%</span></>
+                      : total}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 考査振り返りへの導線 */}
+            <button className="exam-nav-btn" onClick={onExamReview}
+              style={{ marginBottom: "1.25rem" }}>
+              <span className="exam-nav-icon">📝</span>
+              <span style={{ flex: 1 }}>
+                <span style={{ fontWeight: 500 }}>考査の振り返りを書く</span>
+                <span style={{ display: "block", fontSize: 11, color: "#888", marginTop: 2 }}>
+                  中間・期末・学年末の振り返りを記入
+                </span>
+              </span>
+              <span style={{ color: "#bbb" }}>›</span>
+            </button>
+
+            <div className="card">
+              {records.length === 0
+                ? (
+                  <div className="empty">
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>📝</div>
+                    <div>まだ記録がありません</div>
+                    <div style={{ marginTop: 4, fontSize: 12 }}>「記録する」から授業を追加しましょう</div>
+                  </div>
+                )
+                : records.map(r => {
+                  const { m, d } = fmtDate(r.date);
+                  const lv = preLevels[r.preStudy ?? 0];
+                  const lvR = revLevels[r.review ?? 0];
+                  return (
+                    <div key={r.id} className="record-item">
+                      <div className="date-box">
+                        <div className="date-m">{m}</div>
+                        <div className="date-d">{d}</div>
+                      </div>
+                      <div>
+                        <div className="record-title">{r.title}</div>
+                        <div className="badges">
+                          {r.subject && <span className="badge badge-subject">{r.subject}</span>}
+                          <span className={`badge badge-${lv.cls}`}>予習 {lv.symbol}</span>
+                          <span className={`badge badge-${lvR.cls}`}>復習 {lvR.symbol}</span>
+                          {r.score !== null && r.score !== undefined && (
+                            <span className={`badge badge-score ${getScoreClass(r.score, r.scoreMax)}`}>
+                              {r.score}/{r.scoreMax}点
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="record-actions">
+                        <button className="icon-btn edit" onClick={() => onEdit(r)} title="編集">✏</button>
+                        <button className="icon-btn del" onClick={() => onDelete(r.id)} title="削除">✕</button>
+                      </div>
+                    </div>
+                  );
+                })
+              }
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ===== メインアプリ =====
+    // ===== 組み込みブラウザ検知 =====
+    function detectInAppBrowser() {
+      const ua = navigator.userAgent || "";
+      // 既にFirebase認証ハンドラページにいる場合はスキップ
+      if (location.pathname.indexOf("/__/auth/") !== -1) return null;
+
+      // 各種アプリの組み込みブラウザを検知
+      // Google系（Classroom, Gmail, Search等）
+      if (/GSA\//i.test(ua) && !/Safari/i.test(ua)) return "google";
+      // iOS Classroom/Gmail などの WKWebView
+      if (/iPhone|iPad|iPod/.test(ua) && !/Safari/i.test(ua)) {
+        // Google系アプリの判定
+        if (/CriOS/i.test(ua)) return null; // Chrome iOSは安全
+        if (/FxiOS/i.test(ua)) return null; // Firefox iOSは安全
+        if (/EdgiOS/i.test(ua)) return null; // Edge iOSは安全
+        // それ以外でSafariを名乗らないiOSはWebView（アプリ内ブラウザ）
+        return "ios_webview";
+      }
+      // LINE
+      if (/Line\//i.test(ua)) return "line";
+      // Facebook / Instagram
+      if (/FBAN|FBAV|FB_IAB|Instagram/i.test(ua)) return "facebook";
+      // Twitter / X
+      if (/Twitter/i.test(ua)) return "twitter";
+      // Android系のWebView判定（wvフラグ）
+      if (/Android/i.test(ua) && /wv\)/i.test(ua)) return "android_webview";
+      return null;
+    }
+
+    // ===== 組み込みブラウザ警告画面 =====
+    function InAppBrowserWarning({ browserType }) {
+      const [copied, setCopied] = useState(false);
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent || "");
+      const url = window.location.href;
+
+      function handleCopy() {
+        try {
+          // navigator.clipboard が使えない環境のフォールバック付き
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2500);
+            });
+          } else {
+            const ta = document.createElement("textarea");
+            ta.value = url;
+            ta.style.position = "fixed"; ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2500);
+          }
+        } catch (e) {
+          alert("コピーできませんでした。下のURLを手で選択してコピーしてください。");
+        }
+      }
+
+      function handleOpenInBrowser() {
+        if (isIOS) {
+          // iOS: x-safari-https:// プロトコルでSafariを起動できる場合がある
+          // ただし全環境で動くわけではないので、ボタンとしては「コピー」を主軸にする
+          window.location.href = "x-safari-https://" + url.replace(/^https?:\/\//, "");
+        } else {
+          // Android: intent:// 経由でChromeを起動できる場合がある
+          const noScheme = url.replace(/^https?:\/\//, "");
+          window.location.href = "intent://" + noScheme + "#Intent;scheme=https;package=com.android.chrome;end";
+        }
+      }
+
+      return (
+        <div className="iab-wrap">
+          <div className="iab-box">
+            <div className="iab-icon">📱</div>
+            <div className="iab-title">Safariまたはブラウザで開いてください</div>
+            <div className="iab-msg">
+              現在、アプリ内ブラウザ（Classroomアプリ等）で開かれているため、Googleログインができません。
+              下の手順で<strong>Safari</strong>（iPhone）または<strong>Chrome</strong>（Android）で開き直してください。
+            </div>
+
+            <div className="iab-steps">
+              {isIOS ? (
+                <>
+                  <div className="iab-step">
+                    <div className="iab-step-num">1</div>
+                    <div>画面の<strong>右上または右下の「…」「共有」ボタン</strong>をタップ</div>
+                  </div>
+                  <div className="iab-step">
+                    <div className="iab-step-num">2</div>
+                    <div><strong>「Safariで開く」</strong>を選ぶ</div>
+                  </div>
+                  <div className="iab-step">
+                    <div className="iab-step-num">3</div>
+                    <div>Safariが開いたら、Googleアカウントでログインしてください</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="iab-step">
+                    <div className="iab-step-num">1</div>
+                    <div>画面右上の<strong>「︙」（3点メニュー）</strong>をタップ</div>
+                  </div>
+                  <div className="iab-step">
+                    <div className="iab-step-num">2</div>
+                    <div><strong>「Chromeで開く」</strong>または「ブラウザで開く」を選ぶ</div>
+                  </div>
+                  <div className="iab-step">
+                    <div className="iab-step-num">3</div>
+                    <div>Chromeが開いたら、Googleアカウントでログインしてください</div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <button className="iab-btn-secondary" onClick={handleCopy}>
+              📋 このページのURLをコピーする
+            </button>
+            {copied && (
+              <div className="iab-toast">
+                ✓ URLをコピーしました。ブラウザを開いて貼り付けてください。
+              </div>
+            )}
+
+            <div style={{ marginTop: 16, fontSize: 11, color: "#888", lineHeight: 1.6 }}>
+              <strong>うまく開けない場合：</strong><br />
+              ・下のURLを長押しでコピーし、Safari/Chromeのアドレスバーに貼り付け<br />
+              ・または、ブラウザのブックマークから開く
+            </div>
+            <div className="iab-url" style={{ marginTop: 8 }}>{url}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [authState, setAuthState] = useState("loading");
+      const [user, setUser] = useState(null);
+      const [records, setRecords] = useState([]);
+      const [preLabels, setPreLabels] = useState([...DEFAULT_PRE_LABELS]);
+      const [revLabels, setRevLabels] = useState([...DEFAULT_REV_LABELS]);
+      const [view, setView] = useState("list");
+      const [editRecord, setEditRecord] = useState(null);
+
+      useEffect(() => {
+        const unsub = auth.onAuthStateChanged(u => {
+          if (u) {
+            setUser(u); setAuthState("loggedin");
+            db.collection("users").doc(u.uid).set({
+              displayName: u.displayName || "",
+              email: u.email || "",
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            }, { merge: true });
+            loadAll(u.uid);
+          } else { setUser(null); setAuthState("guest"); setRecords([]); }
+        });
+        return () => unsub();
+      }, []);
+
+      async function loadAll(uid) {
+        const [snap, sSnap] = await Promise.all([
+          userCol(uid).orderBy("date", "desc").get(),
+          settingsDoc(uid).get(),
+        ]);
+        setRecords(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        if (sSnap.exists) {
+          const d = sSnap.data();
+          if (d.preLabels) setPreLabels(d.preLabels);
+          if (d.revLabels) setRevLabels(d.revLabels);
+        }
+      }
+
+      async function handleDelete(id) {
+        if (!window.confirm("この記録を削除しますか？")) return;
+        await userCol(user.uid).doc(id).delete();
+        setRecords(prev => prev.filter(r => r.id !== id));
+      }
+
+      function handleEdit(record) { setEditRecord(record); setView("edit"); }
+
+      const preLevels = buildLevels(preLabels);
+      const revLevels = buildLevels(revLabels);
+      const subjects = [...new Set(records.map(r => r.subject).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ja"));
+
+      if (authState === "loading") return <div className="loading">読み込み中…</div>;
+      if (authState === "guest") return <LoginScreen onLogin={u => { setUser(u); setAuthState("loggedin"); loadAll(u.uid); }} />;
+
+      if (view === "add") return (
+        <EditScreen uid={user.uid} preLevels={preLevels} revLevels={revLevels}
+          existing={null} subjects={subjects}
+          onSave={() => { loadAll(user.uid); setView("list"); }}
+          onCancel={() => setView("list")} />
+      );
+
+      if (view === "edit") return (
+        <EditScreen uid={user.uid} preLevels={preLevels} revLevels={revLevels}
+          existing={editRecord} subjects={subjects}
+          onSave={() => { loadAll(user.uid); setView("list"); setEditRecord(null); }}
+          onCancel={() => { setView("list"); setEditRecord(null); }} />
+      );
+
+      if (view === "settings") return (
+        <SettingsScreen uid={user.uid}
+          currentPreLabels={preLabels} currentRevLabels={revLabels}
+          onSave={(pl, rl) => { setPreLabels(pl); setRevLabels(rl); }}
+          onCancel={() => setView("list")} />
+      );
+
+      if (view === "examReview") return (
+        <ExamReviewScreen uid={user.uid} onBack={() => setView("list")} />
+      );
+
+      return (
+        <ListScreen user={user} records={records} preLevels={preLevels} revLevels={revLevels}
+          onAdd={() => setView("add")}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onSettings={() => setView("settings")}
+          onExamReview={() => setView("examReview")}
+          onLogout={() => auth.signOut()} />
+      );
+    }
+
+    // 起動時に組み込みブラウザを判定し、該当する場合は警告画面、そうでなければ通常のAppを表示
+    if (window.__diag) window.__diag('組み込みブラウザ判定 開始', 'ok');
+    const _inAppBrowser = detectInAppBrowser();
+    if (window.__diag) window.__diag('組み込みブラウザ判定 結果: ' + (_inAppBrowser || 'なし（通常ブラウザ）'), 'ok');
+
+    try {
+      if (_inAppBrowser) {
+        if (window.__diag) window.__diag('警告画面をrender開始', 'ok');
+        ReactDOM.createRoot(document.getElementById("root")).render(<InAppBrowserWarning browserType={_inAppBrowser} />);
+      } else {
+        if (window.__diag) window.__diag('通常Appをrender開始', 'ok');
+        ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+      }
+      if (window.__diag) window.__diag('render 呼び出し完了（ここまで来れば描画されるはず）', 'ok');
+    } catch (e) {
+      if (window.__diag) window.__diag('render失敗: ' + e.message, 'err');
+      throw e;
+    }
+  </script>
+</body>
+
+</html>
