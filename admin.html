@@ -11,9 +11,48 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/[email protected]/babel.min.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+
+  <!--
+    Babel Standalone を安定版 7.24.7 に固定
+    3段階フォールバック: jsDelivr → unpkg → cdnjs
+  -->
+  <script>
+    (function() {
+      var BABEL_SOURCES = [
+        "https://cdn.jsdelivr.net/npm/@babel/[email protected]/babel.min.js",
+        "https://unpkg.com/@babel/[email protected]/babel.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"
+      ];
+      var attemptIdx = 0;
+      function loadBabel() {
+        if (attemptIdx >= BABEL_SOURCES.length) {
+          document.body.innerHTML = '<div style="padding:2rem;font-family:sans-serif;text-align:center;">' +
+            '<h2>読み込みエラー</h2>' +
+            '<p>必要なライブラリの読み込みに失敗しました。<br>しばらく時間をおいてから、ページを再読み込みしてください。</p>' +
+            '<p style="font-size:12px;color:#888;">（Babel CDN: すべての候補で失敗）</p>' +
+            '</div>';
+          return;
+        }
+        var s = document.createElement("script");
+        s.src = BABEL_SOURCES[attemptIdx];
+        s.onerror = function() {
+          console.warn("Babel CDN failed: " + BABEL_SOURCES[attemptIdx]);
+          attemptIdx++;
+          loadBabel();
+        };
+        s.onload = function() {
+          console.log("Babel loaded from: " + BABEL_SOURCES[attemptIdx]);
+          if (window.Babel && window.Babel.transformScriptTags) {
+            window.Babel.transformScriptTags();
+          }
+        };
+        document.head.appendChild(s);
+      }
+      loadBabel();
+    })();
+  </script>
   <style>
     * {
       box-sizing: border-box;
